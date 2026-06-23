@@ -34,11 +34,17 @@ export async function POST(request: NextRequest) {
     // 3. Award points to buyer (1 point per 1000 KES spent)
     const points = Math.floor(amount / 1000)
     if (points > 0) {
-      await supabase.from("user_points").insert({
-        user_id: user.id,
-        amount: points,
-        reason: "Marketplace purchase"
+      const { error: pointsError } = await supabase.rpc("award_points", {
+        p_user_id: user.id,
+        p_points: points,
+        p_type: "earn",
+        p_reason: "Marketplace purchase",
+        p_reference_id: productId,
+        p_reference_type: "marketplace_purchase"
       })
+      if (pointsError) {
+        console.error("[Purchase API] Failed to award points:", pointsError)
+      }
     }
 
     // 4. Create notification for seller

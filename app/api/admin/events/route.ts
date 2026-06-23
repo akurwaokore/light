@@ -9,7 +9,7 @@ export async function GET() {
     .from("events")
     .select(`
       *,
-      organizer:profiles(id, display_name, email, photo_url)
+      organizer:profiles!events_organizer_id_fkey(id, display_name, email, photo_url)
     `)
     .order("date", { ascending: false })
 
