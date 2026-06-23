@@ -3,7 +3,7 @@ import { checkAdminAccess, unauthorizedResponse } from "@/lib/admin-auth"
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   if (!id || id === "undefined") {
@@ -29,7 +29,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
   if (!id || id === "undefined") {

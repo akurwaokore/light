@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { normalizeJobApplication } from "@/lib/jobs"
 
 export async function POST(request: Request) {
   try {
@@ -34,6 +35,20 @@ export async function POST(request: Request) {
 
     if (jobData.posted_by === user.id) {
       return NextResponse.json({ error: "You cannot apply to your own job posting" }, { status: 400 })
+    }
+
+    const { data: existingApplication } = await supabase
+      .from("job_applications")
+      .select("id")
+      .eq("job_id", jobId)
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (existingApplication) {
+      return NextResponse.json(
+        { error: "You have already applied to this job", applicationId: existingApplication.id },
+        { status: 409 },
+      )
     }
 
     // 2. Fetch applicant CV details if cvId is provided, otherwise fallback to cvUrl
@@ -149,7 +164,7 @@ export async function POST(request: Request) {
       warnings.push("Could not create applicant confirmation notification")
     }
 
-    return NextResponse.json({ success: true, data: application, warnings })
+    return NextResponse.json({ success: true, data: normalizeJobApplication(application), warnings })
   } catch (error: any) {
     console.error("[Job Apply] error:", error)
     return NextResponse.json({ error: "Failed to submit application" }, { status: 500 })

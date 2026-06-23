@@ -1,20 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Belleza, Alegreya } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "sonner" // Import Toaster for toast notifications
 import "./globals.css"
-
-const belleza = Belleza({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-belleza",
-})
-
-const alegreya = Alegreya({
-  subsets: ["latin"],
-  variable: "--font-alegreya",
-})
 
 export const metadata: Metadata = {
   title: "Light Alumni Connect",
@@ -34,7 +22,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${belleza.variable} ${alegreya.variable} font-sans antialiased`}>
+      <body
+        className="font-sans antialiased"
+        style={
+          {
+            "--font-belleza": "Georgia",
+            "--font-alegreya": "Palatino Linotype",
+          } as React.CSSProperties
+        }
+      >
         {children}
         <Analytics />
         <Toaster position="top-right" richColors />

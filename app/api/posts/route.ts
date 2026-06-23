@@ -60,25 +60,22 @@ export async function GET(request: NextRequest) {
     // Simplified logic to ensure posts are visible
     // Filter by active status for guest/general, but allow authors to see their own.
     if (user) {
-        // Show posts that are:
-        // 1. Authored by the user
-        // 2. Public and active
-        // 3. Friends-only, active, and authored by a friend
-        const { data: friends } = await supabase
-          .from("friendships")
-          .select("user_id, friend_id")
-          .eq("status", "accepted")
-          .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+      const { data: friends } = await supabase
+        .from("friendships")
+        .select("user_id, friend_id")
+        .eq("status", "accepted")
+        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
 
-        const friendIds = friends?.map(f => f.user_id === user.id ? f.friend_id : f.user_id) || []
-        
-        if (friendIds.length > 0) {
-            query = query.or(`author_id.eq.${user.id},status.eq.active,and(visibility.eq.friends,author_id.in.(${friendIds.join(",")}))`)
-        } else {
-            query = query.or(`author_id.eq.${user.id},status.eq.active,status.is.null`)
-        }
+      const friendIds = friends?.map((f) => (f.user_id === user.id ? f.friend_id : f.user_id)) || []
+      const publicAndOwnFilters = [`author_id.eq.${user.id}`, "and(visibility.eq.public,status.eq.active)", "status.is.null"]
+
+      if (friendIds.length > 0) {
+        publicAndOwnFilters.push(`and(visibility.eq.friends,status.eq.active,author_id.in.(${friendIds.join(",")}))`)
+      }
+
+      query = query.or(publicAndOwnFilters.join(","))
     } else {
-        query = query.or(`status.eq.active,status.is.null`)
+      query = query.or("and(visibility.eq.public,status.eq.active),status.is.null")
     }
 
     const { data: posts, error } = await query
@@ -153,7 +150,7 @@ export async function POST(request: NextRequest) {
       .select("posts_auto_approve")
       .maybeSingle()
 
-    const autoApprove = settings?.posts_auto_approve !== false;
+    const autoApprove = settings?.posts_auto_approve !== false
 
     const { data: post, error } = await supabase
       .from("posts")
@@ -165,7 +162,7 @@ export async function POST(request: NextRequest) {
           video_url: video_url || null,
           media_urls: media_urls || [],
           visibility: visibility || "public",
-          status: "active",
+          status: autoApprove ? "active" : "pending_approval",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },

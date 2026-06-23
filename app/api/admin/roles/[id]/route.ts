@@ -3,14 +3,14 @@ import { checkAdminAccess, unauthorizedResponse } from "@/lib/admin-auth"
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { authorized, supabase, status } = await checkAdminAccess("manage_roles")
   if (!authorized) return unauthorizedResponse(status!)
 
   const body = await request.json()
   const { name, description, permissions } = body
-  const roleId = params.id
+  const { id: roleId } = await params
 
   // 1. Update role details
   const { error: roleError } = await supabase!
@@ -49,12 +49,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { authorized, supabase, status } = await checkAdminAccess("manage_roles")
   if (!authorized) return unauthorizedResponse(status!)
 
-  const roleId = params.id
+  const { id: roleId } = await params
 
   // Don't allow deleting the super_admin role if possible
   const { data: role } = await supabase!

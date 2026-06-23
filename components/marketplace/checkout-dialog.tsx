@@ -89,6 +89,45 @@ export function CheckoutDialog({
 
   const estimatedPoints = Math.floor(product.price * 0.0001 * 100) / 100
 
+  const handleMessageSeller = async () => {
+    if (!seller?.id) return
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipientId: seller.id }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.conversationId) {
+        toast({
+          title: "Unable to start chat",
+          description: data.error || "Please try again in a moment.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("open-chat", {
+          detail: {
+            id: data.conversationId,
+            name: seller.full_name || "Seller",
+          },
+        }),
+      )
+      onOpenChange(false)
+    } catch (error) {
+      toast({
+        title: "Unable to start chat",
+        description: "Please try again in a moment.",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={(val) => {
       if (!val) {
@@ -136,13 +175,7 @@ export function CheckoutDialog({
                 <Button 
                   variant="default" 
                   className="w-full gap-2 rounded-xl shadow-md shadow-primary/10"
-                  onClick={() => {
-                    if (seller?.id) {
-                      console.log("[Checkout] Starting chat with seller:", seller.id)
-                      router.push(`/chat?userId=${seller.id}`)
-                      onOpenChange(false)
-                    }
-                  }}
+                  onClick={handleMessageSeller}
                 >
                   <MessageSquare className="h-4 w-4" />
                   Message

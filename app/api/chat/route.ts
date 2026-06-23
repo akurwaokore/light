@@ -15,6 +15,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "You cannot chat with yourself" }, { status: 400 })
     }
 
+    const { data: recipientProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", recipientId)
+      .maybeSingle()
+
+    if (!recipientProfile) {
+      return NextResponse.json({ error: "Recipient not found" }, { status: 404 })
+    }
+
     console.log(`[Chat API] POST request from ${user.id} to ${recipientId}`)
 
     // Use RPC to atomically get or create the conversation
@@ -53,73 +63,51 @@ export async function GET() {
 
     const conversations: any[] = []
 
-    for (const participation of (myParticipations || [])) {
+    for (const participation of myParticipations || []) {
       const convId = participation.conversation_id
-      const { data: conversationRows, error: convError } = await supabase
-        .from("chat_conversations")
-        .select("id, updated_at")
-        .eq("id", convId)
-        .limit(1)
+      const [{ data: conversationRows, error: convError }, { data: otherPartRows, error: otherPartError }, { data: lastMsg }] =
+        await Promise.all([
+          supabase.from("chat_conversations").select("id, updated_at").eq("id", convId).limit(1),
+          supabase.from("chat_participants").select("user_id").eq("conversation_id", convId).neq("user_id", user.id).limit(1),
+          supabase
+            .from("chat_messages")
+            .select("content, created_at, is_read, sender_id")
+            .eq("conversation_id", convId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ])
 
       const conversation = conversationRows?.[0]
-
-      if (convError || !conversation) {
-        if (convError) console.error("[Chat API] Conversation lookup error:", convError)
-        continue
-      }
-
-      // Get the other participant's basic participant row first
-      const { data: otherPartRows, error: otherPartError } = await supabase
-        .from("chat_participants")
-        .select("user_id")
-        .eq("conversation_id", convId)
-        .neq("user_id", user.id)
-        .limit(1)
-
-      if (otherPartError) {
-        console.error("[Chat API] Other participant lookup error:", otherPartError)
-        continue
-      }
-
       const otherPartBase = otherPartRows?.[0]
 
-      if (otherPartBase?.user_id) {
-        // Fetch profile separately to avoid brittle nested relation failures
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("id, display_name, photo_url")
-          .eq("id", otherPartBase.user_id)
-          .maybeSingle()
+      if (convError || otherPartError || !conversation || !otherPartBase?.user_id) {
+        if (convError) console.error("[Chat API] Conversation lookup error:", convError)
+        if (otherPartError) console.error("[Chat API] Other participant lookup error:", otherPartError)
+        continue
+      }
 
-        // Get the most recent message
-        const { data: lastMsg } = await supabase
-          .from("chat_messages")
-          .select("content, created_at, is_read, sender_id")
-          .eq("conversation_id", convId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, display_name, photo_url")
+        .eq("id", otherPartBase.user_id)
+        .maybeSingle()
 
-        const safeConversation = {
+      conversations.push({
+        conversation_id: convId,
+        conversation: {
           ...conversation,
           last_message: lastMsg ? [lastMsg] : [],
-        }
-
-        const safeOtherParticipant = {
+        },
+        other_participant: {
           user_id: otherPartBase.user_id,
           user: profile || {
             id: otherPartBase.user_id,
             display_name: "Unknown User",
             photo_url: null,
           },
-        }
-
-        conversations.push({
-          conversation_id: convId,
-          conversation: safeConversation,
-          other_participant: safeOtherParticipant,
-        })
-      }
+        },
+      })
     }
 
     // Sort by most recent activity

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import { validateProductData } from "@/lib/validation"
+import { normalizeMarketplaceProduct } from "@/lib/marketplace"
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,13 +89,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ products: [] })
     }
 
-    console.log("[akurwas] Products fetched:", products?.length)
+    const normalizedProducts = (products || []).map(normalizeMarketplaceProduct)
+
+    console.log("[akurwas] Products fetched:", normalizedProducts.length)
     return NextResponse.json({
-      products: products || [],
+      products: normalizedProducts,
       pagination: {
         page,
         limit,
-        hasMore: products?.length === limit,
+        hasMore: normalizedProducts.length === limit,
       },
     })
   } catch (error) {
@@ -174,6 +177,8 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
+    const normalizedCategory = typeof categoryValue === "string" ? categoryValue.trim() : categoryValue
+
     const payloadVariants = [
       basePayload,
       {
@@ -181,7 +186,7 @@ export async function POST(request: NextRequest) {
         description: basePayload.description,
         price: basePayload.price,
         currency: basePayload.currency,
-        category: basePayload.category,
+        category: normalizedCategory,
         image_urls: basePayload.image_urls,
         status: basePayload.status,
         seller_id: basePayload.seller_id,
@@ -208,7 +213,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
 
       if (!result.error && result.data) {
-        product = result.data
+      product = normalizeMarketplaceProduct(result.data)
         break
       }
 

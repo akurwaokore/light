@@ -13,8 +13,7 @@ import {
   ChevronLeft,
   Loader2,
   AlertCircle,
-  ExternalLink,
-  Download,
+  Users,
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -55,7 +54,7 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ id: st
       const data = await response.json()
 
       if (response.ok) {
-        setApplications(data || [])
+        setApplications(data.applications || [])
       } else {
         setError(data.error || "Failed to load applicants")
       }

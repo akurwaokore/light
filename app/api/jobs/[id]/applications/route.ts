@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { normalizeJobApplication } from "@/lib/jobs"
 
 export async function GET(
   request: Request,
@@ -44,7 +45,9 @@ export async function GET(
       return NextResponse.json({ error: applicationsError.message }, { status: 500 })
     }
 
-    return NextResponse.json(applications)
+    return NextResponse.json({
+      applications: (applications || []).map(normalizeJobApplication),
+    })
   } catch (error) {
     console.error("[Job Applications API] Unexpected error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

@@ -9,6 +9,33 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { productId, amount, sellerId } = body
+    const numericAmount = Number(amount)
+
+    if (!productId || !sellerId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return NextResponse.json({ error: "Invalid purchase payload" }, { status: 400 })
+    }
+
+    if (sellerId === user.id) {
+      return NextResponse.json({ error: "You cannot buy your own listing" }, { status: 400 })
+    }
+
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("id, title, seller_id, status, price")
+      .eq("id", productId)
+      .single()
+
+    if (productError || !product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    if (product.seller_id !== sellerId) {
+      return NextResponse.json({ error: "Seller mismatch for this product" }, { status: 400 })
+    }
+
+    if (product.status === "sold") {
+      return NextResponse.json({ error: "This listing has already been sold" }, { status: 409 })
+    }
 
     // 1. Record transaction
     const { data: transaction, error: transError } = await supabase
@@ -17,7 +44,7 @@ export async function POST(request: NextRequest) {
         product_id: productId,
         buyer_id: user.id,
         seller_id: sellerId,
-        amount: amount,
+        amount: numericAmount,
         status: "completed"
       })
       .select()
@@ -28,32 +55,27 @@ export async function POST(request: NextRequest) {
     // 2. Mark product as sold
     await supabase
       .from("products")
-      .update({ status: "sold" })
+      .update({ status: "sold", updated_at: new Date().toISOString() })
       .eq("id", productId)
 
-    // 3. Award points to buyer (1 point per 1000 KES spent)
-    const points = Math.floor(amount / 1000)
-    if (points > 0) {
-      await supabase.from("user_points").insert({
-        user_id: user.id,
-        amount: points,
-        reason: "Marketplace purchase"
-      })
-    }
+    // 3. Award points through the database function used elsewhere in the app.
+    await supabase.rpc("award_points", {
+      p_user_id: user.id,
+      p_points: Number.parseFloat((numericAmount * 0.0001).toFixed(4)),
+      p_type: "earn",
+      p_reason: "Marketplace purchase",
+      p_reference_id: transaction.id,
+      p_reference_type: "purchase",
+      p_metadata: { productId, sellerId },
+    })
 
     // 4. Create notification for seller
-    const { data: product } = await supabase
-      .from("products")
-      .select("title")
-      .eq("id", productId)
-      .single()
-
     console.log("[Purchase API] Creating notification for seller:", sellerId)
     const { error: notifError } = await supabase.from("notifications").insert({
       user_id: sellerId,
       type: "marketplace_purchase",
       title: "New Order Received!",
-      content: `Congratulations! ${user.user_metadata?.full_name || 'Someone'} has ordered your item: ${product?.title || 'an item'}. Contact the buyer to arrange delivery.`,
+      message: `Congratulations! ${user.user_metadata?.full_name || "Someone"} has ordered your item: ${product.title || "an item"}. Contact the buyer to arrange delivery.`,
       action_url: "/profile/listings",
       metadata: {
         productId,
@@ -72,7 +94,7 @@ export async function POST(request: NextRequest) {
     // 5. Fetch seller profile for success dialog
     const { data: sellerProfile } = await supabase
       .from("profiles")
-      .select("id, full_name, phone_number, avatar_url, bio, status, degree, graduation_year")
+      .select("id, full_name, display_name, phone, phone_number, avatar_url, photo_url, bio, status, degree, graduation_year")
       .eq("id", sellerId)
       .single()
 
@@ -80,6 +102,13 @@ export async function POST(request: NextRequest) {
       success: true, 
       transaction,
       seller: sellerProfile
+        ? {
+            ...sellerProfile,
+            full_name: sellerProfile.full_name || sellerProfile.display_name || "Seller",
+            avatar_url: sellerProfile.avatar_url || sellerProfile.photo_url || null,
+            phone_number: sellerProfile.phone_number || sellerProfile.phone || null,
+          }
+        : null,
     })
   } catch (error: any) {
     console.error("[Purchase API] Error:", error)

@@ -58,7 +58,7 @@ export default function ApplicationDetailsPage() {
       const response = await fetch("/api/jobs/my-applications")
       if (!response.ok) throw new Error("Failed to load application details")
       const data = await response.json()
-      const found = (data || []).find((app: Application) => app.id === id)
+      const found = (data.applications || []).find((app: Application) => app.id === id)
       
       if (!found) throw new Error("Application not found")
       setApplication(found)

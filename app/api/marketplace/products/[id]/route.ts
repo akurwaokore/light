@@ -1,44 +1,43 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { normalizeMarketplaceProduct } from "@/lib/marketplace"
 
 function isValidUUID(str: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   return uuidRegex.test(str)
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
-    const { id } = params
+    const { id } = await params
 
     if (!isValidUUID(id)) {
       return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
     }
 
-    const { data: product, error } = await supabase.from("products").select("*").eq("id", id).single()
+    const { data: product, error } = await supabase
+      .from("products")
+      .select(`
+        *,
+        seller:profiles(id, display_name, email, photo_url)
+      `)
+      .eq("id", id)
+      .single()
 
     if (error) throw error
 
-    const productWithSeller = {
-      ...product,
-      seller: {
-        id: product.seller_id,
-        display_name: product.seller_name || "Alumni",
-        email: product.seller_email,
-      },
-    }
-
-    return NextResponse.json({ product: productWithSeller })
+    return NextResponse.json({ product: normalizeMarketplaceProduct(product) })
   } catch (error) {
     console.error("[akurwas] Error fetching product:", error)
     return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 })
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
-    const { id } = params
+    const { id } = await params
 
     if (!isValidUUID(id)) {
       return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
@@ -69,26 +68,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     if (updateError) throw updateError
 
-    const productWithSeller = {
-      ...product,
-      seller: {
-        id: product.seller_id,
-        display_name: product.seller_name || "Alumni",
-        email: product.seller_email,
-      },
-    }
-
-    return NextResponse.json({ product: productWithSeller })
+    return NextResponse.json({ product: normalizeMarketplaceProduct(product) })
   } catch (error) {
     console.error("[akurwas] Error updating product:", error)
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 })
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()
-    const { id } = params
+    const { id } = await params
 
     if (!isValidUUID(id)) {
       return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
@@ -142,15 +132,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     if (updateError) throw updateError
 
-    const productWithSeller = {
-      ...product,
-      seller: {
-        id: product.seller_id,
-        display_name: product.seller_name || "Alumni",
-        email: product.seller_email,
-      },
-    }
-
     const { data: admins } = await supabase.from("profiles").select("id").in("role", ["admin", "super_admin"])
 
     if (admins && admins.length > 0) {
@@ -166,7 +147,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       await supabase.from("notifications").insert(notifications)
     }
 
-    return NextResponse.json({ product: productWithSeller })
+    return NextResponse.json({ product: normalizeMarketplaceProduct(product) })
   } catch (error) {
     console.error("[akurwas] Error updating product:", error)
     return NextResponse.json({ error: "Failed to update product" }, { status: 500 })

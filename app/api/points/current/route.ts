@@ -31,12 +31,18 @@ export async function GET(request: NextRequest) {
 
     const points = pointsData?.total_points || 0
     
+    // Calculate rank with a lightweight count query.
+    const { count: rankCount } = await supabase
+      .from("user_points")
+      .select("*", { count: "exact", head: true })
+      .gt("total_points", points)
+
     // Calculate milestone (next 100)
     const milestone = Math.ceil((points + 1) / 100) * 100
 
     return NextResponse.json({
       points,
-      rank: null, // Rank requires a complex query, skipping for now
+      rank: typeof rankCount === "number" ? rankCount + 1 : null,
       milestone,
     })
   } catch (error) {

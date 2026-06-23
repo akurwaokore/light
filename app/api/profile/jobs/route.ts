@@ -9,12 +9,20 @@ export async function GET(request: Request) {
 
     const { data, error } = await supabase
       .from("jobs")
-      .select("*")
+      .select(`
+        *,
+        applications:job_applications(count)
+      `)
       .eq("posted_by", user.id)
       .order("created_at", { ascending: false })
 
     if (error) throw error
-    return NextResponse.json(data)
+    return NextResponse.json(
+      (data || []).map((job: any) => ({
+        ...job,
+        application_count: job.applications?.[0]?.count || 0,
+      })),
+    )
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

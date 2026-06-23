@@ -64,8 +64,6 @@ export function AppHeader() {
       setTheme(savedTheme)
       document.documentElement.classList.toggle("dark", savedTheme === "dark")
     }
-
-    return () => { mounted = false }
   }, [])
 
   const toggleTheme = () => {

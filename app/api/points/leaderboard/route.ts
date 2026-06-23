@@ -47,12 +47,15 @@ export async function GET(request: NextRequest) {
       return {
         id: record.user_id,
         user_id: record.user_id,
+        display_name: profile?.display_name || profile?.full_name || "Alumni Member",
         full_name: profile?.full_name || profile?.display_name || "Alumni Member",
+        photo_url: profile?.photo_url || profile?.avatar_url,
         avatar_url: profile?.avatar_url || profile?.photo_url,
         campus: profile?.campus,
         graduation_year: profile?.graduation_year,
         points: record.total_points || 0,
         rank: index + 1,
+        total_transactions: 0,
       }
     })
 

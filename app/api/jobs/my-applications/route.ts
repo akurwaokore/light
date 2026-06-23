@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { normalizeJobApplication } from "@/lib/jobs"
 
 export async function GET(request: Request) {
   try {
@@ -21,7 +22,8 @@ export async function GET(request: Request) {
           employment_type,
           currency,
           salary_min,
-          salary_max
+          salary_max,
+          description
         )
       `)
       .eq("user_id", user.id)
@@ -29,7 +31,7 @@ export async function GET(request: Request) {
 
     if (error) throw error
 
-    return NextResponse.json(data)
+    return NextResponse.json({ applications: (data || []).map(normalizeJobApplication) })
   } catch (error: any) {
     console.error("[My Applications API] error:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })

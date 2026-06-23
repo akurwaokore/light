@@ -9,8 +9,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables")
 }
 
+const validatedSupabaseUrl = supabaseUrl
+const validatedSupabaseAnonKey = supabaseAnonKey
+
 export function createBrowserClient() {
-  return createSupabaseBrowserClient(supabaseUrl, supabaseAnonKey)
+  return createSupabaseBrowserClient(validatedSupabaseUrl, validatedSupabaseAnonKey)
 }
 
 export function createClient() {

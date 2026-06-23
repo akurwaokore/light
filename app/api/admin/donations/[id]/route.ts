@@ -3,13 +3,13 @@ import { checkAdminAccess, unauthorizedResponse } from "@/lib/admin-auth"
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { authorized, supabase, status } = await checkAdminAccess()
   if (!authorized) return unauthorizedResponse(status!)
 
   const body = await request.json()
-  const { id } = params
+  const { id } = await params
 
   const { data: campaign, error } = await supabase!
     .from("donation_campaigns")
@@ -28,12 +28,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const { authorized, supabase, status } = await checkAdminAccess()
   if (!authorized) return unauthorizedResponse(status!)
 
-  const { id } = params
+  const { id } = await params
 
   const { error } = await supabase!
     .from("donation_campaigns")

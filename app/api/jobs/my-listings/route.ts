@@ -26,12 +26,12 @@ export async function GET(request: Request) {
     }
 
     // Flatten application counts
-    const listingsWithCounts = listings.map(job => ({
+    const listingsWithCounts = (listings || []).map((job: any) => ({
       ...job,
       application_count: job.applications?.[0]?.count || 0
     }))
 
-    return NextResponse.json(listingsWithCounts)
+    return NextResponse.json({ listings: listingsWithCounts })
   } catch (error) {
     console.error("[My Listings API] Unexpected error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

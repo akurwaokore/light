@@ -45,7 +45,7 @@ export default function MyListingsPage() {
       const data = await response.json()
 
       if (response.ok) {
-        setListings(data || [])
+        setListings(data.listings || [])
       } else {
         setError(data.error || "Failed to load your job listings")
       }

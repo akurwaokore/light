@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { normalizeMarketplaceProduct } from "@/lib/marketplace"
 
 export async function GET() {
   try {
@@ -17,7 +18,10 @@ export async function GET() {
     // Fetch user's products and services
     const { data: products, error } = await supabase
       .from("products")
-      .select("*")
+      .select(`
+        *,
+        seller:profiles(id, display_name, email, photo_url)
+      `)
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false })
 
@@ -26,7 +30,7 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ products: products || [] })
+    return NextResponse.json({ products: (products || []).map(normalizeMarketplaceProduct) })
   } catch (error) {
     console.error("[akurwas] Error in user products route:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

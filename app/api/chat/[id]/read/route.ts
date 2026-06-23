@@ -7,11 +7,10 @@ function isUuid(value: string) {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await Promise.resolve(params)
-    const conversationId = resolvedParams.id
+    const { id: conversationId } = await params
 
     if (!conversationId || !isUuid(conversationId)) {
       return NextResponse.json({ error: "Invalid conversation ID" }, { status: 400 })

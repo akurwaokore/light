@@ -15,7 +15,8 @@ import {
   AlertCircle,
   FileText,
   UserCheck,
-  Edit2
+  Edit2,
+  Receipt,
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -30,6 +31,7 @@ import { ProductFormComponent } from "@/components/marketplace/product-form"
 export default function MyListingsPage() {
   const [listings, setListings] = useState<any[]>([])
   const [jobs, setJobs] = useState<any[]>([])
+  const [purchases, setPurchases] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedListing, setSelectedListing] = useState<any>(null)
@@ -41,13 +43,18 @@ export default function MyListingsPage() {
   const fetchMyData = async () => {
     setLoading(true)
     try {
-      const [listingsRes, jobsRes] = await Promise.all([
+      const [listingsRes, jobsRes, purchasesRes] = await Promise.all([
         fetch("/api/profile/listings"),
-        fetch("/api/profile/jobs")
+        fetch("/api/profile/jobs"),
+        fetch("/api/marketplace/purchases"),
       ])
       
       if (listingsRes.ok) setListings(await listingsRes.json())
       if (jobsRes.ok) setJobs(await jobsRes.json())
+      if (purchasesRes.ok) {
+        const purchasesData = await purchasesRes.json()
+        setPurchases(purchasesData.purchases || [])
+      }
     } catch (error) {
       toast.error("Failed to load your listings")
     } finally {
@@ -137,6 +144,48 @@ export default function MyListingsPage() {
               ))
             )}
           </div>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-primary" />
+                <CardTitle className="text-xl">Purchase History</CardTitle>
+              </div>
+              <CardDescription>Products and services you have bought through the marketplace.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {purchases.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No purchases recorded yet.</p>
+              ) : (
+                purchases.map((purchase) => (
+                  <div key={purchase.id} className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-1">
+                      <p className="font-semibold">{purchase.product?.title || "Archived listing"}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Bought on {new Date(purchase.created_at).toLocaleDateString()} for KES {Number(purchase.amount || 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Seller: {purchase.product?.seller?.display_name || "Unknown seller"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="capitalize">
+                        {purchase.status}
+                      </Badge>
+                      {purchase.product?.id && (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/marketplace/${purchase.product.id}`}>
+                            <Eye className="mr-2 h-3.5 w-3.5" />
+                            View Listing
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="jobs" className="space-y-4">

@@ -52,7 +52,7 @@ export default function MyApplicationsPage() {
       const response = await fetch("/api/jobs/my-applications")
       if (!response.ok) throw new Error("Failed to load applications")
       const data = await response.json()
-      setApplications(data || [])
+      setApplications(data.applications || [])
     } catch (err: any) {
       setError(err.message)
     } finally {
