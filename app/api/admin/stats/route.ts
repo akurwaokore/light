@@ -69,7 +69,7 @@ export async function GET() {
         id, 
         title, 
         created_at,
-        organizer:profiles(display_name)
+        organizer:profiles!events_organizer_id_fkey(display_name)
       `)
       .eq("status", "pending_approval")
       .limit(2)

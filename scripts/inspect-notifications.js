@@ -1,34 +1,32 @@
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+import pkg from 'pg';
+const { Client } = pkg;
+import dotenv from 'dotenv';
 
-// Basic manual env loader
-const envPath = fs.existsSync(path.join(process.cwd(), '.env.local'))
-  ? path.join(process.cwd(), '.env.local')
-  : path.join(process.cwd(), '.env');
-const envContent = fs.readFileSync(envPath, 'utf8');
-const env = {};
-envContent.split('\n').forEach(line => {
-  const [key, ...valueParts] = line.split('=');
-  if (key && valueParts.length > 0) {
-    env[key.trim()] = valueParts.join('=').trim().replace(/^["']|["']$/g, '');
-  }
-});
+dotenv.config();
 
-async function inspectNotifications() {
-  const supabase = createClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY
-  );
+async function inspect() {
+  const connectionString = process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL;
+  const client = new Client({
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  });
 
-  console.log('--- Inspecting notifications columns ---');
-  const { data, error } = await supabase.from('notifications').select('*').limit(1);
-  
-  if (data && data.length > 0) {
-    console.log('Columns found:', Object.keys(data[0]));
-  } else {
-    console.log('No data found to inspect columns. Error:', error?.message);
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+  try {
+    await client.connect();
+    const res = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'notifications' 
+      ORDER BY ordinal_position;
+    `);
+    console.log("Notifications Columns:", res.rows);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    await client.end();
   }
 }
 
-inspectNotifications();
+inspect();

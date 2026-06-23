@@ -24,9 +24,31 @@ import {
   Plus,
   Play,
   Edit2,
-  Trash2
+  Trash2,
+  ThumbsUp,
+  Laugh,
+  Frown,
+  Sparkles
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+
+const REACTION_ICONS: Record<string, any> = {
+  like: ThumbsUp,
+  love: Heart,
+  haha: Laugh,
+  wow: Sparkles,
+  sad: Frown,
+  angry: Frown,
+}
+
+const REACTION_COLORS: Record<string, string> = {
+  like: "text-blue-500",
+  love: "text-red-500",
+  haha: "text-yellow-500",
+  wow: "text-purple-500",
+  sad: "text-gray-500",
+  angry: "text-orange-500",
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -283,12 +305,17 @@ export default function FeedPage() {
   const [profile, setProfile] = useState<any>(null)
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [editContent, setEditContent] = useState("")
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null)
+  const [view, setView] = useState<'feed' | 'bookmarks'>('feed')
   const { toast } = useToast()
 
   useEffect(() => {
     fetchProfile()
-    fetchPosts()
   }, [])
+
+  useEffect(() => {
+    fetchPosts()
+  }, [view])
 
   const fetchProfile = async () => {
     try {
@@ -300,8 +327,10 @@ export default function FeedPage() {
   }
 
   const fetchPosts = async () => {
+    setLoading(true)
     try {
-      const response = await fetch("/api/posts")
+      const endpoint = view === 'bookmarks' ? "/api/posts/saved" : "/api/posts"
+      const response = await fetch(endpoint)
       if (response.ok) {
         const data = await response.json()
         const normalizedPosts = (data.posts || []).map((post: any) => ({
@@ -389,27 +418,49 @@ export default function FeedPage() {
     }
   }
 
-  const handleLike = async (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              user_liked: !post.user_liked,
-              likes_count: post.user_liked ? post.likes_count - 1 : post.likes_count + 1,
-            }
-          : post,
-      ),
-    )
-
+  const handleReaction = async (postId: string, reactionType: string) => {
     try {
-      await fetch(`/api/posts/${postId}/react`, {
+      const response = await fetch(`/api/posts/${postId}/react`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reaction_type: "like" }),
+        body: JSON.stringify({ reaction_type: reactionType }),
       })
+
+      if (response.ok) {
+        fetchPosts()
+      }
     } catch (error) {
-      console.error("Error liking post:", error)
+      toast({
+        title: "Error",
+        description: "Failed to react to post",
+        variant: "destructive",
+      })
+    }
+    setShowReactionPicker(null)
+  }
+
+  const handleToggleSave = async (postId: string) => {
+    try {
+      const response = await fetch(`/api/posts/${postId}/save`, {
+        method: "POST"
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast({
+          title: data.saved ? "Post Bookmarked" : "Post Removed from Bookmarks",
+          description: data.message,
+        })
+        
+        // Update local state or filter out if we're in bookmarks view
+        setPosts((prev) =>
+          prev.map((post) =>
+            post.id === postId ? { ...post, user_saved: data.saved } : post
+          ).filter((post) => view !== 'bookmarks' || data.saved)
+        )
+      }
+    } catch (error) {
+      console.error("Error toggling save:", error)
     }
   }
 
@@ -556,152 +607,363 @@ export default function FeedPage() {
         </Badge>
       </div>
 
-      {/* Create Post */}
-      <Card className="border-none bg-gradient-to-br from-background via-background to-primary/5 shadow-xl shadow-primary/5 ring-1 ring-border/50">
-        <CardContent className="p-4 md:p-6">
-          <div className="flex gap-4">
-            <Avatar className="h-10 w-10 ring-2 ring-background md:h-12 md:w-12">
-              <AvatarImage src={profile?.photo_url || "/placeholder.svg"} alt={profile?.display_name} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {profile?.display_name?.split(" ").map((n: any) => n[0]).join("") || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-4">
-              <Textarea
-                placeholder={`What's on your mind, ${profile?.display_name?.split(" ")[0] || "Alumnus"}?`}
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                className="min-h-[100px] border-none bg-transparent p-0 text-lg shadow-none focus-visible:ring-0 md:text-xl"
-              />
-              {/* Media Previews removed for brevity - assume they exist in original */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <div className="flex items-center gap-1 md:gap-2">
-                  {/* Media buttons... */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-9 rounded-full">
-                        {visibility === "public" ? <Globe className="mr-2 h-4 w-4" /> : 
-                         visibility === "friends" ? <Users className="mr-2 h-4 w-4" /> : 
-                         <LockIcon className="mr-2 h-4 w-4" />}
-                        <span className="hidden sm:inline capitalize">{visibility}</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-40 rounded-xl">
-                      <DropdownMenuItem onClick={() => setVisibility("public")} className="gap-2">
-                        <Globe className="h-4 w-4" /> Public
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setVisibility("friends")} className="gap-2">
-                        <Users className="h-4 w-4" /> Friends
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setVisibility("private")} className="gap-2">
-                        <LockIcon className="h-4 w-4" /> Private
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+      {/* Bookmarks Toggle Tab View Selector */}
+      <div className="flex border-b border-border/40 px-2 pb-1 gap-4">
+        <button
+          onClick={() => setView('feed')}
+          className={cn(
+            "text-sm font-bold pb-2 border-b-2 transition-all px-1",
+            view === 'feed' ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          All Posts
+        </button>
+        <button
+          onClick={() => setView('bookmarks')}
+          className={cn(
+            "text-sm font-bold pb-2 border-b-2 transition-all px-1 flex items-center gap-1.5",
+            view === 'bookmarks' ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Bookmark className="h-4 w-4" />
+          Bookmarks
+        </button>
+      </div>
+
+      {/* Create Post (only shown when on feed view) */}
+      {view === 'feed' && (
+        <Card className="border-none bg-gradient-to-br from-background via-background to-primary/5 shadow-xl shadow-primary/5 ring-1 ring-border/50">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex gap-4">
+              <Avatar className="h-10 w-10 ring-2 ring-background md:h-12 md:w-12">
+                <AvatarImage src={profile?.photo_url || "/placeholder.svg"} alt={profile?.display_name} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {profile?.display_name?.split(" ").map((n: any) => n[0]).join("") || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-4">
+                <Textarea
+                  placeholder={`What's on your mind, ${profile?.display_name?.split(" ")[0] || "Alumnus"}?`}
+                  value={newPostContent}
+                  onChange={(e) => setNewPostContent(e.target.value)}
+                  className="min-h-[100px] border-none bg-transparent p-0 text-lg shadow-none focus-visible:ring-0 md:text-xl"
+                />
+                {/* Media Upload Options */}
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary cursor-pointer">
+                    <ImageIcon className="h-4 w-4" />
+                    <span>Add Photo</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleMediaUpload(e, 'image')}
+                    />
+                  </label>
+                  <label className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary cursor-pointer">
+                    <VideoIcon className="h-4 w-4" />
+                    <span>Add Video</span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={(e) => handleMediaUpload(e, 'video')}
+                    />
+                  </label>
                 </div>
-                <Button 
-                  disabled={!newPostContent.trim() || isPosting} 
-                  onClick={handleCreatePost}
-                  className="h-10 rounded-full px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-                >
-                  {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  Post
-                </Button>
+
+                {/* Media Previews */}
+                {(newPostImage || newPostVideo) && (
+                  <div className="relative mt-2 rounded-lg border overflow-hidden max-h-48 bg-black flex items-center justify-center">
+                    {newPostImage && <img src={newPostImage} alt="Upload preview" className="max-h-48 object-contain" />}
+                    {newPostVideo && <video src={newPostVideo} controls className="max-h-48 object-contain" />}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-9 rounded-full">
+                          {visibility === "public" ? <Globe className="mr-2 h-4 w-4" /> : 
+                           visibility === "friends" ? <Users className="mr-2 h-4 w-4" /> : 
+                           <LockIcon className="mr-2 h-4 w-4" />}
+                          <span className="hidden sm:inline capitalize">{visibility}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-40 rounded-xl">
+                        <DropdownMenuItem onClick={() => setVisibility("public")} className="gap-2">
+                          <Globe className="h-4 w-4" /> Public
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVisibility("friends")} className="gap-2">
+                          <Users className="h-4 w-4" /> Friends
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setVisibility("private")} className="gap-2">
+                          <LockIcon className="h-4 w-4" /> Private
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <Button 
+                    disabled={!newPostContent.trim() || isPosting} 
+                    onClick={handleCreatePost}
+                    className="h-10 rounded-full px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                  >
+                    {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Post
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Posts Feed */}
       <div className="space-y-10">
-        {posts.map((post) => (
-          <div key={post.id} className="group relative">
-            <div className="flex items-center justify-between px-2 mb-3">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 ring-2 ring-primary/10">
-                  <AvatarImage src={post.author?.photo_url || "/placeholder.svg"} />
-                  <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
-                    {post.author?.display_name?.split(" ").map((n: string) => n[0]).join("") || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-sm font-bold leading-none">{post.author?.display_name || "Anonymous"}</p>
-                  <div className="mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">
-                    <span>{formatTimeAgo(post.created_at)}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5">
-                      {post.visibility === 'public' ? <Globe className="h-2.5 w-2.5" /> : 
-                       post.visibility === 'friends' ? <Users className="h-2.5 w-2.5" /> : 
-                       <LockIcon className="h-2.5 w-2.5" />}
-                      {post.visibility || 'public'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Card className="overflow-hidden border-none bg-card/50 shadow-2xl shadow-black/5 ring-1 ring-border/50 transition-all hover:shadow-primary/5">
-              <CardContent className="p-0">
-                <div className="px-5 py-4">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed md:text-base">
-                    {post.content}
-                  </p>
-                </div>
-                
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border/10">
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => handleLike(post.id)}
-                      className={cn(
-                        "flex items-center gap-1.5 transition-all active:scale-125",
-                        post.user_liked ? "text-red-500 font-bold" : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <Heart className={cn("h-6 w-6", post.user_liked && "fill-current animate-bounce")} />
-                      <span className="text-xs">{post.likes_count > 0 ? post.likes_count : ""}</span>
-                    </button>
-                    
-                    <button className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
-                      <MessageCircle className="h-6 w-6" />
-                      <span className="text-xs">{post.comments_count > 0 ? post.comments_count : ""}</span>
-                    </button>
-                  </div>
-                </div>
-                
-                {(Number(post.comments_count || 0) > 0 || (Array.isArray(post.recent_comments) && post.recent_comments.length > 0)) && (
-                  <div className="px-4 py-4 space-y-4">
-                    <button 
-                      onClick={fetchPosts}
-                      className="text-xs font-medium text-muted-foreground hover:underline"
-                    >
-                      Refresh comments ({Number(post.comments_count || 0)})
-                    </button>
-                    
-                    <div className="space-y-4">
-                      {post.recent_comments?.map((comment: any) => (
-                        <CommentItem 
-                          key={comment.id}
-                          comment={comment}
-                          post={post}
-                          profile={profile}
-                          onCommentAdded={handleCommentAdded}
-                          onCommentDeleted={handleCommentDeleted}
-                        />
-                      ))}
+        {posts.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            {view === 'bookmarks' ? 'No saved posts found.' : 'No posts in your feed yet.'}
+          </div>
+        ) : (
+          posts.map((post) => (
+            <div key={post.id} className="group relative">
+              {/* Header */}
+              <div className="flex items-center justify-between px-2 mb-3">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 ring-2 ring-primary/10">
+                    <AvatarImage src={post.author?.photo_url || "/placeholder.svg"} />
+                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                      {post.author?.display_name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-bold leading-none">{post.author?.display_name || "Anonymous"}</p>
+                    <div className="mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">
+                      <span>{formatTimeAgo(post.created_at)}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-0.5">
+                        {post.visibility === 'public' ? <Globe className="h-2.5 w-2.5" /> : 
+                         post.visibility === 'friends' ? <Users className="h-2.5 w-2.5" /> : 
+                         <LockIcon className="h-2.5 w-2.5" />}
+                        {post.visibility || 'public'}
+                      </span>
                     </div>
                   </div>
-                )}
-                
-                <CommentInput
-                  postId={post.id}
-                  profile={profile}
-                  onCommentAdded={(comment) => handleCommentAdded(post.id, comment)}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        ))}
+                </div>
+
+                {/* Expose Post Edit / Post Delete & Bookmark Actions visually */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="More options">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleToggleSave(post.id)}>
+                      <Bookmark className={cn("mr-2 h-4 w-4", post.user_saved && "fill-current text-yellow-500")} />
+                      {post.user_saved ? "Unsave Post" : "Save Post"}
+                    </DropdownMenuItem>
+                    {profile?.id && (post.author?.id === profile.id || profile.role === "admin") && (
+                      <>
+                        <DropdownMenuSeparator />
+                        {post.author?.id === profile.id && (
+                          <DropdownMenuItem onClick={() => {
+                            setIsEditing(post.id)
+                            setEditContent(post.content)
+                          }}>
+                            <Edit2 className="mr-2 h-4 w-4" />
+                            Edit Post
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem 
+                          onClick={() => handleDeletePost(post.id)}
+                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Post
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Card Body */}
+              <Card className="overflow-hidden border-none bg-card/50 shadow-2xl shadow-black/5 ring-1 ring-border/50 transition-all hover:shadow-primary/5">
+                <CardContent className="p-0">
+                  {isEditing === post.id ? (
+                    <div className="px-5 py-4 space-y-3">
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setIsEditing(null)}>
+                          Cancel
+                        </Button>
+                        <Button size="sm" onClick={() => handleUpdatePost(post.id)}>
+                          Save Changes
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="px-5 py-4">
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed md:text-base">
+                          {post.content}
+                        </p>
+                      </div>
+
+                      {/* Rich Media Visualizers (Images, Video Player, multi) */}
+                      {post.image_url && (
+                        <div className="relative overflow-hidden border-t border-border/10 max-h-96">
+                          <img 
+                            src={post.image_url} 
+                            alt="Post media" 
+                            className="w-full h-full object-cover max-h-96"
+                          />
+                        </div>
+                      )}
+                      
+                      {post.video_url && (
+                        <div className="relative overflow-hidden border-t border-border/10 max-h-[400px] bg-black flex items-center justify-center">
+                          <video 
+                            src={post.video_url} 
+                            controls 
+                            className="w-full max-h-[400px]"
+                            preload="metadata"
+                          />
+                        </div>
+                      )}
+
+                      {post.media_urls && post.media_urls.length > 0 && (
+                        <div className={cn(
+                          "grid gap-1 border-t border-border/10",
+                          post.media_urls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                        )}>
+                          {post.media_urls.map((url: string, index: number) => {
+                            const isVideo = url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov');
+                            return (
+                              <div key={index} className="relative overflow-hidden aspect-video bg-muted">
+                                {isVideo ? (
+                                  <video src={url} controls className="w-full h-full object-cover" />
+                                ) : (
+                                  <img src={url} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* Reactions counts by type summary bar */}
+                  {post.reactions_count > 0 && (
+                    <div className="flex w-full items-center justify-between px-5 py-2 border-t border-b border-border/5 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        {Object.entries(post.reactions_by_type || {}).map(([type, count]) => {
+                          const Icon = REACTION_ICONS[type] || Heart
+                          const color = REACTION_COLORS[type] || ""
+                          return (
+                            <div key={type} className={cn("flex items-center", color)}>
+                              <Icon className="h-3.5 w-3.5" />
+                            </div>
+                          )
+                        })}
+                        <span className="ml-1 font-medium">{post.reactions_count}</span>
+                      </div>
+                      <div className="flex gap-3">
+                        {post.comments_count > 0 && <span>{post.comments_count} comments</span>}
+                        {post.shares_count > 0 && <span>{post.shares_count} shares</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reaction and action button triggers */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/10">
+                    <div className="flex items-center gap-4">
+                      {/* Emoji reaction picker trigger */}
+                      <div className="relative">
+                        <button 
+                          onClick={() => setShowReactionPicker(showReactionPicker === post.id ? null : post.id)}
+                          className={cn(
+                            "flex items-center gap-1.5 transition-all active:scale-110",
+                            post.user_reaction ? REACTION_COLORS[post.user_reaction] + " font-bold" : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {(() => {
+                            const Icon = post.user_reaction ? REACTION_ICONS[post.user_reaction] : Heart
+                            return <Icon className={cn("h-6 w-6", post.user_reaction && "fill-current")} />
+                          })()}
+                          <span className="text-xs capitalize">{post.user_reaction || "React"}</span>
+                        </button>
+
+                        {showReactionPicker === post.id && (
+                          <div className="absolute bottom-full left-0 mb-2 flex gap-1 rounded-xl border bg-background p-2 shadow-xl z-20">
+                            {Object.entries(REACTION_ICONS).map(([type, Icon]) => (
+                              <button
+                                key={type}
+                                className={cn(
+                                  "h-8 w-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors",
+                                  REACTION_COLORS[type]
+                                )}
+                                onClick={() => handleReaction(post.id, type)}
+                                aria-label={`React with ${type}`}
+                              >
+                                <Icon className="h-5 w-5" />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <button className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
+                        <MessageCircle className="h-6 w-6" />
+                        <span className="text-xs">{post.comments_count > 0 ? post.comments_count : ""}</span>
+                      </button>
+
+                      {/* Connect ShareDialog component to API route */}
+                      <ShareDialog postId={post.id} onShared={fetchPosts} />
+                    </div>
+                  </div>
+                  
+                  {(Number(post.comments_count || 0) > 0 || (Array.isArray(post.recent_comments) && post.recent_comments.length > 0)) && (
+                    <div className="px-4 py-4 space-y-4">
+                      <button 
+                        onClick={fetchPosts}
+                        className="text-xs font-medium text-muted-foreground hover:underline"
+                      >
+                        Refresh comments ({Number(post.comments_count || 0)})
+                      </button>
+                      
+                      <div className="space-y-4">
+                        {post.recent_comments?.map((comment: any) => (
+                          <CommentItem 
+                            key={comment.id}
+                            comment={comment}
+                            post={post}
+                            profile={profile}
+                            onCommentAdded={handleCommentAdded}
+                            onCommentDeleted={handleCommentDeleted}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <CommentInput
+                    postId={post.id}
+                    profile={profile}
+                    onCommentAdded={(comment) => handleCommentAdded(post.id, comment)}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
