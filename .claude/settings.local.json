@@ -9,7 +9,10 @@
       "Bash(find / -name pnpm -type f)",
       "Bash(node_modules/.bin/tsc --noEmit -p tsconfig.json)",
       "Bash(command -v node)",
-      "Read(//home/eddykivs/.nvm/versions/**)"
+      "Read(//home/eddykivs/.nvm/versions/**)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" -v)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" -e \"console.log\\('node works', process.platform\\)\")",
+      "Bash(grep -nE \"Route \\\\\\(app\\\\\\)|┌|├ ○ /$|├ ƒ /$|/ \" \"/tmp/claude-1000/-mnt-c-Users-USER-light/a66f261a-4c0e-4d3d-82b0-a98c2728d668/scratchpad/build.log\")"
     ]
   }
 }
