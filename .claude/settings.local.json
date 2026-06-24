@@ -6,7 +6,10 @@
       "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx\\)$\")",
       "Read(//home/eddykivs/.local/share/pnpm/**)",
       "Bash(command -v pnpm)",
-      "Bash(find / -name pnpm -type f)"
+      "Bash(find / -name pnpm -type f)",
+      "Bash(node_modules/.bin/tsc --noEmit -p tsconfig.json)",
+      "Bash(command -v node)",
+      "Read(//home/eddykivs/.nvm/versions/**)"
     ]
   }
 }

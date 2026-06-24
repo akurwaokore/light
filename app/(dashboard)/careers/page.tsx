@@ -31,7 +31,9 @@ import {
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlumniCVForm } from "@/components/careers/cv-form"
+import { CvManager } from "@/components/careers/cv-manager"
 import { ApplyModal } from "@/components/careers/apply-modal"
+import { SaveJobButton } from "@/components/careers/save-job-button"
 
 const jobPostSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
@@ -384,7 +386,10 @@ export default function CareersPage() {
                         )}
                       </div>
                       </div>
-                      <Button onClick={() => setSelectedJobToApply(job)}>Apply Now</Button>
+                      <div className="flex items-center gap-2">
+                        <SaveJobButton jobId={job.id} />
+                        <Button onClick={() => setSelectedJobToApply(job)}>Apply Now</Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -417,6 +422,10 @@ export default function CareersPage() {
               <p className="text-sm md:text-base text-muted-foreground">To maintain a structured and searchable alumni database, please follow the guidelines below when uploading your CV.</p>
             </div>
             <AlumniCVForm />
+            <div className="mt-8">
+              <h3 className="mb-3 text-lg font-semibold">My CVs</h3>
+              <CvManager />
+            </div>
           </div>
         </TabsContent>
 

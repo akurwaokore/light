@@ -58,9 +58,8 @@ export async function POST(request: NextRequest) {
       .update({ status: "sold", updated_at: new Date().toISOString() })
       .eq("id", productId)
 
-<<<<<<< HEAD
     // 3. Award points through the database function used elsewhere in the app.
-    await supabase.rpc("award_points", {
+    const { error: pointsError } = await supabase.rpc("award_points", {
       p_user_id: user.id,
       p_points: Number.parseFloat((numericAmount * 0.0001).toFixed(4)),
       p_type: "earn",
@@ -69,23 +68,9 @@ export async function POST(request: NextRequest) {
       p_reference_type: "purchase",
       p_metadata: { productId, sellerId },
     })
-=======
-    // 3. Award points to buyer (1 point per 1000 KES spent)
-    const points = Math.floor(amount / 1000)
-    if (points > 0) {
-      const { error: pointsError } = await supabase.rpc("award_points", {
-        p_user_id: user.id,
-        p_points: points,
-        p_type: "earn",
-        p_reason: "Marketplace purchase",
-        p_reference_id: productId,
-        p_reference_type: "marketplace_purchase"
-      })
-      if (pointsError) {
-        console.error("[Purchase API] Failed to award points:", pointsError)
-      }
+    if (pointsError) {
+      console.error("[Purchase API] Failed to award points:", pointsError)
     }
->>>>>>> 8c65ee004be9d367ecbf0c2ed93e14adae8afb84
 
     // 4. Create notification for seller
     console.log("[Purchase API] Creating notification for seller:", sellerId)

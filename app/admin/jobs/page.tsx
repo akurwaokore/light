@@ -122,6 +122,28 @@ export default function JobsManagement() {
     }
   }
 
+  const handleBulkApprove = async () => {
+    const pending = jobs.filter((j) => j.status === "pending_approval" || j.status === "pending")
+    if (pending.length === 0) {
+      toast.info("No pending jobs to approve")
+      return
+    }
+    if (!confirm(`Approve all ${pending.length} pending job(s)?`)) return
+    try {
+      const response = await fetch("/api/admin/jobs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approveAll: true, status: "active" }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Bulk approve failed")
+      toast.success(`Approved ${data.updated} job(s)`)
+      fetchJobs()
+    } catch (error: any) {
+      toast.error(error.message)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!id || id === "undefined") {
       toast.error("Invalid job ID")
@@ -155,6 +177,11 @@ export default function JobsManagement() {
           <h1 className="font-heading text-3xl font-bold">Jobs Management</h1>
           <p className="text-muted-foreground">Manage alumni career opportunities and listings</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleBulkApprove}>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            Approve All Pending
+          </Button>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
@@ -226,6 +253,7 @@ export default function JobsManagement() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
@@ -316,8 +344,8 @@ export default function JobsManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {job.status === "pending" && (
-                            <Button size="icon" variant="ghost" onClick={() => handleUpdateStatus(job.id, "approved")} title="Approve">
+                          {(job.status === "pending" || job.status === "pending_approval") && (
+                            <Button size="icon" variant="ghost" onClick={() => handleUpdateStatus(job.id, "active")} title="Approve">
                               <CheckCircle className="h-4 w-4 text-green-500" />
                             </Button>
                           )}

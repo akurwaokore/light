@@ -88,7 +88,7 @@ export default function DashboardPage() {
         try {
           // Fetch points and events in parallel
           const [pointsRes, eventsRes] = await Promise.all([
-            fetch(`/api/points/current?userId=${profile.id}`),
+            fetch(`/api/points/current`),
             fetch('/api/events?status=approved')
           ])
 

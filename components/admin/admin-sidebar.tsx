@@ -59,6 +59,16 @@ const systemItems = [
   { title: "Settings", href: "/admin/settings", icon: Settings },
 ]
 
+// Admins are full members too — these jump to the live community experience
+// where they can post, like, comment, and use the marketplace like any user.
+const communityItems = [
+  { title: "My User Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Community Feed", href: "/feed", icon: MessageSquare },
+  { title: "Member Directory", href: "/members", icon: Users },
+  { title: "Marketplace", href: "/marketplace", icon: ShoppingBag },
+  { title: "Careers", href: "/careers", icon: Briefcase },
+]
+
 export function AdminSidebar() {
   const pathname = usePathname()
 
@@ -118,6 +128,24 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {systemItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href}>
+                    <Link href={item.href}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Community</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {communityItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton asChild isActive={pathname === item.href}>
                     <Link href={item.href}>

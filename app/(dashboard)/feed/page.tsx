@@ -31,6 +31,8 @@ import {
   Sparkles
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { supabaseBrowser } from "@/lib/supabaseBrowser"
+import { RichContent } from "@/components/feed/rich-content"
 
 const REACTION_ICONS: Record<string, any> = {
   like: ThumbsUp,
@@ -307,7 +309,13 @@ export default function FeedPage() {
   const [editContent, setEditContent] = useState("")
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null)
   const [view, setView] = useState<'feed' | 'bookmarks'>('feed')
+  const [hasNewPosts, setHasNewPosts] = useState(false)
+  const [activeTag, setActiveTag] = useState<string | null>(null)
   const { toast } = useToast()
+
+  const visiblePosts = activeTag
+    ? posts.filter((p) => (p.content || "").toLowerCase().includes(`#${activeTag.toLowerCase()}`))
+    : posts
 
   useEffect(() => {
     fetchProfile()
@@ -316,6 +324,22 @@ export default function FeedPage() {
   useEffect(() => {
     fetchPosts()
   }, [view])
+
+  // Realtime: surface a "new posts" banner when someone else publishes.
+  useEffect(() => {
+    if (view !== 'feed') return
+    const channel = supabaseBrowser
+      .channel('feed-posts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload: any) => {
+        if (payload?.new?.author_id && payload.new.author_id !== profile?.id) {
+          setHasNewPosts(true)
+        }
+      })
+      .subscribe()
+    return () => {
+      supabaseBrowser.removeChannel(channel)
+    }
+  }, [view, profile?.id])
 
   const fetchProfile = async () => {
     try {
@@ -519,22 +543,35 @@ export default function FeedPage() {
         }),
       })
 
+      const data = await response.json().catch(() => ({}))
+
       if (response.ok) {
         setNewPostContent("")
         setNewPostImage(null)
         setNewPostVideo(null)
         setNewPostMedia([])
-        
+
         toast({
           title: "Post created! 🎉",
           description: "Your post has been shared with the community.",
           className: "bg-green-50 border-green-200 text-green-800",
         })
-        
+
         fetchPosts()
+      } else {
+        toast({
+          title: "Couldn't create post",
+          description: data.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error creating post:", error)
+      toast({
+        title: "Error",
+        description: "Network error while creating your post.",
+        variant: "destructive",
+      })
     } finally {
       setIsPosting(false)
     }
@@ -630,6 +667,19 @@ export default function FeedPage() {
         </button>
       </div>
 
+      {/* Realtime: new posts available */}
+      {view === 'feed' && hasNewPosts && (
+        <div className="flex justify-center">
+          <Button
+            size="sm"
+            className="rounded-full shadow-md"
+            onClick={() => { setHasNewPosts(false); fetchPosts() }}
+          >
+            New posts available — tap to refresh
+          </Button>
+        </div>
+      )}
+
       {/* Create Post (only shown when on feed view) */}
       {view === 'feed' && (
         <Card className="border-none bg-gradient-to-br from-background via-background to-primary/5 shadow-xl shadow-primary/5 ring-1 ring-border/50">
@@ -719,14 +769,22 @@ export default function FeedPage() {
         </Card>
       )}
 
+      {/* Active hashtag filter */}
+      {activeTag && (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-4 py-2 text-sm">
+          <span>Showing posts tagged <span className="font-semibold text-primary">#{activeTag}</span></span>
+          <Button size="sm" variant="ghost" onClick={() => setActiveTag(null)}>Clear</Button>
+        </div>
+      )}
+
       {/* Posts Feed */}
       <div className="space-y-10">
-        {posts.length === 0 ? (
+        {visiblePosts.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            {view === 'bookmarks' ? 'No saved posts found.' : 'No posts in your feed yet.'}
+            {activeTag ? `No posts tagged #${activeTag}.` : view === 'bookmarks' ? 'No saved posts found.' : 'No posts in your feed yet.'}
           </div>
         ) : (
-          posts.map((post) => (
+          visiblePosts.map((post) => (
             <div key={post.id} className="group relative">
               {/* Header */}
               <div className="flex items-center justify-between px-2 mb-3">
@@ -811,9 +869,11 @@ export default function FeedPage() {
                   ) : (
                     <>
                       <div className="px-5 py-4">
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed md:text-base">
-                          {post.content}
-                        </p>
+                        <RichContent
+                          text={post.content}
+                          className="whitespace-pre-wrap text-sm leading-relaxed md:text-base"
+                          onTagClick={setActiveTag}
+                        />
                       </div>
 
                       {/* Rich Media Visualizers (Images, Video Player, multi) */}

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { CvViewButton } from "@/components/careers/cv-view-button"
+import { ApplicationChat } from "@/components/careers/application-chat"
 import { Briefcase, Building2, MapPin, Clock, FileText, ChevronLeft, Loader2, AlertCircle, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -167,16 +169,10 @@ export default function ApplicationDetailsPage() {
                 </div>
               </div>
 
-              {application.cv_url && application.cv_url !== "pending" && (
+              {((application as any).cv_id || (application.cv_url && application.cv_url !== "pending")) && (
                 <div className="space-y-2">
                   <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Attached CV</h4>
-                  <Button variant="outline" className="gap-2" asChild>
-                    <a href={application.cv_url} target="_blank" rel="noopener noreferrer">
-                      <FileText className="h-4 w-4" />
-                      View Submitted CV
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </Button>
+                  <CvViewButton cvId={(application as any).cv_id} cvUrl={application.cv_url} label="View Submitted CV" />
                 </div>
               )}
             </CardContent>
@@ -208,6 +204,16 @@ export default function ApplicationDetailsPage() {
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Messages with the employer</CardTitle>
+              <CardDescription>Direct line with the job poster about this application.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ApplicationChat applicationId={application.id} />
             </CardContent>
           </Card>
 

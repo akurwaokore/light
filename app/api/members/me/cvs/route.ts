@@ -12,8 +12,10 @@ export async function GET() {
 
     const { data: cvs, error } = await supabase
       .from("cvs")
-      .select("id, file_url, file_name, created_at")
+      .select("id, file_name, label, is_primary, storage_path, created_at")
       .eq("user_id", user.id)
+      .order("is_primary", { ascending: false })
+      .order("created_at", { ascending: false })
 
     if (error) throw error
 

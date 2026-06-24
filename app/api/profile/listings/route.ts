@@ -12,7 +12,7 @@ export async function GET(request: Request) {
       .from("products")
       .select(`
         *,
-        seller:profiles(id, display_name, email, photo_url)
+        seller:profiles(id, display_name, photo_url)
       `)
       .eq("seller_id", user.id)
       .order("created_at", { ascending: false })

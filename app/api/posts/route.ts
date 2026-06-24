@@ -163,34 +163,67 @@ export async function POST(request: NextRequest) {
 
     const sanitizedContent = sanitizeText(content)
 
-    // Check system settings for auto-approval
-    const { data: settings } = await supabase
+    // Check system settings for auto-approval (key/value row; default = on).
+    const { data: settingRow } = await supabase
       .from("system_settings")
-      .select("posts_auto_approve")
+      .select("value")
+      .eq("key", "posts_auto_approve")
       .maybeSingle()
 
-    const autoApprove = settings?.posts_auto_approve !== false
+    const autoApprove = settingRow ? !(settingRow.value === false || settingRow.value === "false") : true
 
-    const { data: post, error } = await supabase
-      .from("posts")
-      .insert([
-        {
-          author_id: userData.user.id,
-          content: sanitizedContent,
-          image_url: image_url || null,
-          video_url: video_url || null,
-          media_urls: media_urls || [],
-          visibility: visibility || "public",
-          status: autoApprove ? "active" : "pending_approval",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select()
+    const fullRow = {
+      author_id: userData.user.id,
+      content: sanitizedContent,
+      image_url: image_url || null,
+      video_url: video_url || null,
+      media_urls: media_urls || [],
+      visibility: visibility || "public",
+      status: autoApprove ? "active" : "pending_approval",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    let { data: post, error } = await supabase.from("posts").insert([fullRow]).select()
+
+    // Some environments were provisioned from an older migration whose `posts`
+    // table lacks the newer columns (image_url/video_url/media_urls/visibility/
+    // status). Postgres reports an undefined column as 42703; PostgREST reports
+    // a column missing from its schema cache as PGRST204. In either case retry
+    // with only the columns guaranteed to exist so posting still works instead
+    // of failing. The real fix is scripts/fix-posts-columns.sql, but this keeps
+    // the feed usable on drifted databases.
+    if (error && (error.code === "42703" || error.code === "PGRST204")) {
+      console.warn("[akurwas] posts insert hit missing column, retrying minimal:", error.message)
+      const minimalRow = {
+        author_id: userData.user.id,
+        content: sanitizedContent,
+      }
+      ;({ data: post, error } = await supabase.from("posts").insert([minimalRow]).select())
+    }
 
     if (error) {
       console.error("[akurwas] Post creation error:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Award loyalty points for sharing a post with the community. This is a
+    // best-effort side effect — a failure here must never fail the post.
+    if (post?.[0]?.id) {
+      try {
+        const { error: pointsError } = await supabase.rpc("award_points", {
+          p_user_id: userData.user.id,
+          p_points: 2,
+          p_type: "earn",
+          p_reason: "Created a post",
+          p_reference_id: post[0].id,
+          p_reference_type: "post",
+          p_metadata: {},
+        })
+        if (pointsError) console.warn("[akurwas] award_points failed:", pointsError.message)
+      } catch (e: any) {
+        console.warn("[akurwas] award_points threw:", e?.message)
+      }
     }
 
     return NextResponse.json({ post: post?.[0], message: "Post created successfully" })

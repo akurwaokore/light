@@ -83,19 +83,19 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Donations",
-      value: "KES 0",
-      change: "0%",
+      value: `KES ${(liveStats?.totalDonations || 0).toLocaleString()}`,
+      change: "",
       trend: "up",
       icon: DollarSign,
-      description: "vs last month",
+      description: "all-time raised",
     },
     {
-      title: "Engagement Rate",
-      value: "0%",
-      change: "0%",
-      trend: "down",
-      icon: TrendingUp,
-      description: "vs last month",
+      title: "Loyalty Points Awarded",
+      value: (liveStats?.totalPoints || 0).toLocaleString(),
+      change: "",
+      trend: "up",
+      icon: Trophy,
+      description: `${liveStats?.participants || 0} earning members`,
     },
   ]
 
@@ -119,12 +119,16 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
               <div className="flex items-center gap-1 text-xs">
-                {stat.trend === "up" ? (
-                  <ArrowUpRight className="h-3 w-3 text-green-500" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3 text-red-500" />
-                )}
-                <span className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>{stat.change}</span>
+                {stat.change ? (
+                  <>
+                    {stat.trend === "up" ? (
+                      <ArrowUpRight className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <ArrowDownRight className="h-3 w-3 text-red-500" />
+                    )}
+                    <span className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>{stat.change}</span>
+                  </>
+                ) : null}
                 <span className="text-muted-foreground">{stat.description}</span>
               </div>
             </CardContent>
@@ -164,7 +168,7 @@ export default function AdminDashboard() {
                 <Trophy className="h-4 w-4" />
                 Total Points
               </div>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{(liveStats?.totalPoints || 0).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">All-time awarded</p>
             </div>
             <div className="space-y-2">
@@ -172,7 +176,7 @@ export default function AdminDashboard() {
                 <Target className="h-4 w-4" />
                 Average Points
               </div>
-              <div className="text-2xl font-bold">0.00</div>
+              <div className="text-2xl font-bold">{(liveStats?.avgPoints || 0).toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Per active user</p>
             </div>
             <div className="space-y-2">

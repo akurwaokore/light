@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         organizer_id,
         status,
         created_at,
-        organizer:profiles!events_organizer_id_fkey(id, display_name, email, photo_url)
+        organizer:profiles!events_organizer_id_fkey(id, display_name, photo_url)
       `,
       )
       .order("date", { ascending: true })

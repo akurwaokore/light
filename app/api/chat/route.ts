@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { checkAdminAccess } from "@/lib/admin-auth"
 
 // POST - Start or get a conversation
 export async function POST(request: Request) {
@@ -23,6 +24,27 @@ export async function POST(request: Request) {
 
     if (!recipientProfile) {
       return NextResponse.json({ error: "Recipient not found" }, { status: 404 })
+    }
+
+    // Messaging is restricted to users who have an accepted connection.
+    // Admins may message anyone (support/moderation).
+    const { data: friendship } = await supabase
+      .from("friendships")
+      .select("id")
+      .eq("status", "accepted")
+      .or(
+        `and(user_id.eq.${user.id},friend_id.eq.${recipientId}),and(user_id.eq.${recipientId},friend_id.eq.${user.id})`,
+      )
+      .maybeSingle()
+
+    if (!friendship) {
+      const admin = await checkAdminAccess()
+      if (!admin.authorized) {
+        return NextResponse.json(
+          { error: "You can only message people you are connected with." },
+          { status: 403 },
+        )
+      }
     }
 
     console.log(`[Chat API] POST request from ${user.id} to ${recipientId}`)

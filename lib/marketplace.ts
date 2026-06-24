@@ -19,6 +19,8 @@ export type MarketplaceProduct = {
   seller_id: string | null
   seller_name: string | null
   seller_email: string | null
+  quantity: number
+  in_stock: boolean
   image_urls: string[]
   images: string[]
   seller: MarketplaceSeller
@@ -49,6 +51,8 @@ export function normalizeMarketplaceProduct(product: any): MarketplaceProduct {
     seller_id: product.seller_id ?? sellerSource?.id ?? null,
     seller_name: product.seller_name ?? sellerSource?.display_name ?? "Alumni",
     seller_email: product.seller_email ?? sellerSource?.email ?? null,
+    quantity: Number(product.quantity ?? 1),
+    in_stock: Number(product.quantity ?? 1) > 0,
     image_urls: images,
     images,
     seller: {

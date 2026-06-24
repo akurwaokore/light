@@ -19,13 +19,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Get the original post to verify it exists
     const { data: originalPost, error: postError } = await supabase
       .from("posts")
-      .select("id, author_id")
+      .select("id, author_id, visibility")
       .eq("id", id)
       .single()
 
     if (postError || !originalPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
+
+    // Don't let sharing widen the audience of a non-public post.
+    // Private posts can't be reshared at all; friends-only posts stay friends-only.
+    const isOwnPost = originalPost.author_id === user.id
+    if (originalPost.visibility === "private" && !isOwnPost) {
+      return NextResponse.json({ error: "This post cannot be shared" }, { status: 403 })
+    }
+    const shareVisibility =
+      originalPost.visibility === "friends" || originalPost.visibility === "private"
+        ? "friends"
+        : "public"
 
     // Create a new post that shares the original
     const { data: sharedPost, error } = await supabase
@@ -34,7 +45,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         author_id: user.id,
         content: share_text || "",
         shared_post_id: id,
-        visibility: "public",
+        visibility: shareVisibility,
         status: "active"
       })
       .select(`
@@ -84,7 +95,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           }),
         })
     } catch (pointsError) {
-        console.error("[akurwas] Error awarding share points:", pointsError)
+        console.error("[Share API] Error awarding share points:", pointsError)
     }
 
     return NextResponse.json({ post: sharedPost, message: "Post shared successfully" })

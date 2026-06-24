@@ -1,8 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
+import { createServerClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication — this endpoint spends paid AI tokens.
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { title, category, productType, keywords } = body
 

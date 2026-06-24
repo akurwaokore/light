@@ -1,5 +1,20 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { createAdminClient } from "./admin"
+
+export const CV_BUCKET = "cvs"
+
+/**
+ * Short-lived signed URL for a private CV object. Uses the service-role client
+ * so it can sign for an entitled non-owner (poster/admin). The CALLER MUST have
+ * already verified authorization (e.g. via an RLS-gated read of the cv row).
+ */
+export async function createCvSignedUrl(storagePath: string, expiresInSeconds = 300): Promise<string | null> {
+  const admin = createAdminClient()
+  const { data, error } = await admin.storage.from(CV_BUCKET).createSignedUrl(storagePath, expiresInSeconds)
+  if (error) return null
+  return data?.signedUrl ?? null
+}
 
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies()

@@ -36,7 +36,7 @@ export function AppHeader() {
     
     if (isMounted && profile && !profileLoading) {
       const fetchPoints = () => {
-        fetch(`/api/points/current?userId=${profile.id}`)
+        fetch(`/api/points/current`)
           .then(res => res.json())
           .then(pointsData => {
           const val = pointsData?.points ?? pointsData?.total_points ?? 0;

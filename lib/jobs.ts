@@ -4,6 +4,7 @@ export type NormalizedJobApplication = {
   user_id: string
   status: string
   cv_url: string | null
+  cv_id: string | null
   cover_letter: string
   created_at: string
   updated_at: string | null
@@ -39,6 +40,7 @@ export function normalizeJobApplication(application: any): NormalizedJobApplicat
     user_id: application.user_id,
     status: application.status ?? "pending",
     cv_url: application.cv_url ?? null,
+    cv_id: application.cv_id ?? null,
     cover_letter: application.cover_letter ?? "",
     created_at: application.created_at,
     updated_at: application.updated_at ?? null,

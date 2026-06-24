@@ -24,7 +24,7 @@ export async function GET() {
         seller_id,
         product:products(
           *,
-          seller:profiles(id, display_name, email, photo_url)
+          seller:profiles(id, display_name, photo_url)
         )
       `)
       .eq("buyer_id", user.id)

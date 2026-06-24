@@ -53,15 +53,15 @@ export async function GET() {
       })
     }
 
-    // Unified admin check logic
-    const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle()
-    const isAdminRole = roleData?.role === "admin" || roleData?.role === "super_admin"
-    const isAdminProfile = !!profile?.is_admin
+    // Unified admin check: profiles.is_admin OR an admin/super_admin role.
+    const { data: roleRows } = await supabase.from("user_roles").select("roles(name)").eq("user_id", user.id)
+    const roleNames = (roleRows || []).map((r: any) => (Array.isArray(r.roles) ? r.roles[0]?.name : r.roles?.name)).filter(Boolean)
+    const isAdmin = !!profile?.is_admin || roleNames.includes("admin") || roleNames.includes("super_admin")
 
     return NextResponse.json({
       ...profile,
       email: user.email,
-      isAdmin: isAdminRole || isAdminProfile,
+      isAdmin,
     })
   } catch (error) {
     console.error("[akurwas] Error in profile route:", error)

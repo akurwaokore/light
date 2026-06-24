@@ -18,6 +18,7 @@ import {
   Edit,
   Globe,
   Star,
+  Search,
   type LucideIcon,
 } from "lucide-react"
 
@@ -47,6 +48,12 @@ export const mainNavItems: NavItem[] = [
     href: "/dashboard",
     icon: LayoutDashboard,
     description: "Your personal alumni hub",
+  },
+  {
+    title: "Search",
+    href: "/search",
+    icon: Search,
+    description: "Find people, jobs, listings and posts",
   },
 ]
 

@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { checkAdminAccess } from "@/lib/admin-auth"
 
 // GET - Fetch single event
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("events")
       .select(`
         *,
-        organizer:profiles!events_organizer_id_fkey(id, display_name, email, photo_url)
+        organizer:profiles!events_organizer_id_fkey(id, display_name, photo_url)
       `)
       .eq("id", id)
       .single()
@@ -42,34 +43,39 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const body = await request.json()
 
-    // Check if user owns the event or is admin
+    // Check if user owns the event or is admin. `user_roles` has no `role`
+    // column (role names live behind the roles relation), so adminness is
+    // resolved via the centralized RBAC helper instead of a direct query.
     const { data: event } = await supabase.from("events").select("organizer_id").eq("id", id).single()
 
-    const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single()
-
-    const isAdmin = roleData?.role === "admin" || roleData?.role === "super_admin"
     const isOwner = event?.organizer_id === user.id
+    const isAdmin = isOwner ? false : (await checkAdminAccess("manage_events")).authorized
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const updateData = {
+    // Column names must match the events table schema (date/time/end_time/
+    // category/google_meet_link/ticket_price), not the previous invented ones
+    // (start_date/event_type/meeting_link/price/venue_address) which made every
+    // update fail against Postgres.
+    const updateData: Record<string, any> = {
       title: body.title,
       description: body.description,
-      start_date: body.date ? new Date(body.date + "T" + body.time).toISOString() : undefined,
-      end_date: body.end_time ? new Date(body.date + "T" + body.end_time).toISOString() : null,
+      date: body.date,
+      time: body.time,
+      end_time: body.end_time || null,
       location: body.location,
-      is_virtual: body.is_virtual,
-      meeting_link: body.google_meet_link,
-      event_type: body.category,
+      is_virtual: body.is_virtual ?? false,
+      google_meet_link: body.google_meet_link || null,
+      category: body.category,
       max_attendees: body.max_attendees ? Number.parseInt(body.max_attendees) : null,
       image_url: body.image_url,
-      registration_deadline: body.registration_deadline,
-      price: body.is_free ? 0 : body.ticket_price || 0,
-      venue_address: !body.is_virtual ? body.location : null,
+      registration_deadline: body.registration_deadline || null,
+      ticket_price: body.is_free ? 0 : body.ticket_price || 0,
+      is_free: body.is_free ?? false,
       updated_at: new Date().toISOString(),
-      // If user edits their event, reset to pending approval (unless admin)
+      // If a non-admin owner edits their event, send it back for re-approval.
       ...(isOwner && !isAdmin ? { status: "pending_approval" } : {}),
     }
 
@@ -79,7 +85,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       .eq("id", id)
       .select(`
         *,
-        organizer:profiles!events_organizer_id_fkey(id, display_name, email, photo_url)
+        organizer:profiles!events_organizer_id_fkey(id, display_name, photo_url)
       `)
       .single()
 
@@ -107,13 +113,17 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if admin
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+    // Check if admin. `profiles` has no `role` column (roles live in user_roles
+    // and the is_admin flag), so use the centralized RBAC helper. Event owners
+    // may also delete their own event.
+    const { data: event } = await supabase.from("events").select("organizer_id").eq("id", id).single()
+    const isOwner = event?.organizer_id === user.id
 
-    const isAdmin = profile?.role === "admin" || profile?.role === "super_admin"
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Only admins can delete events" }, { status: 403 })
+    if (!isOwner) {
+      const admin = await checkAdminAccess()
+      if (!admin.authorized) {
+        return NextResponse.json({ error: "Only the organizer or an admin can delete this event" }, { status: 403 })
+      }
     }
 
     const { error } = await supabase.from("events").delete().eq("id", id)

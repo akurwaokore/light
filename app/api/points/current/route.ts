@@ -4,18 +4,14 @@ import { createServerClient } from "@/lib/supabase/server"
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerClient()
-    const searchParams = request.nextUrl.searchParams
-    let userId = searchParams.get("userId")
 
-    // If no userId provided, try to get the currently authenticated user
-    if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        userId = user.id
-      } else {
-        return NextResponse.json({ points: 0, rank: null, milestone: 0 })
-      }
+    // Points/rank are always scoped to the authenticated user. A client-supplied
+    // userId is ignored to prevent reading other users' data.
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ points: 0, rank: null, milestone: 0 }, { status: 401 })
     }
+    const userId = user.id
 
     // Fetch from user_points table
     const { data: pointsData, error } = await supabase

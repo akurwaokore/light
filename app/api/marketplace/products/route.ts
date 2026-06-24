@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         .from(tableName)
         .select(`
           *,
-          seller:profiles(id, display_name, email, photo_url)
+          seller:profiles(id, display_name, photo_url)
         `)
         .order("created_at", { ascending: false })
         .range(from, to)
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, email, membership_tier, is_admin")
+    .select("display_name, membership_tier, is_admin")
     .eq("id", userData.user.id)
     .single()
 
@@ -148,17 +148,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Price must be between 1 KES and 100,000,000 KES" }, { status: 400 })
     }
 
-    // Get auto-approval setting
-    const { data: settings } = await supabase
+    // Get auto-approval setting (stored as a key/value row in system_settings).
+    const { data: settingRow } = await supabase
       .from("system_settings")
-      .select("marketplace_auto_approve")
-      .single()
+      .select("value")
+      .eq("key", "marketplace_auto_approve")
+      .maybeSingle()
 
-    // Auto-approve is true by default if not set or if set to true
-    const autoApprove = settings ? settings.marketplace_auto_approve === true : true;
+    // Default to true when the setting hasn't been configured.
+    const autoApprove = settingRow ? (settingRow.value === true || settingRow.value === "true") : true
 
     const sellerName = profile?.display_name || userData.user.user_metadata?.full_name || userData.user.email || "Alumni User"
-    const sellerEmail = profile?.email || userData.user.email || null
+    const sellerEmail = userData.user.email || null
 
     const basePayload = {
       title: body.title,

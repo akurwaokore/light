@@ -29,9 +29,12 @@ export async function proxy(request: NextRequest) {
       // For now we assume 'sb-auth-token' as per current implementation
       // Better way is to use Supabase SSR's getUser()
       
+      // Use the anon key for session verification. getUser() validates the JWT
+      // from cookies; the service-role key must never be used for request-scoped
+      // auth because it bypasses RLS.
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
         {
           cookies: {
             getAll: () =>

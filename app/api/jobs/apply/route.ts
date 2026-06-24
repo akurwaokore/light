@@ -51,37 +51,36 @@ export async function POST(request: Request) {
       )
     }
 
-    // 2. Fetch applicant CV details if cvId is provided, otherwise fallback to cvUrl
-    let finalCvUrl = cvUrl
-    if (cvId && cvId !== "placeholder") {
-      const { data: cvData } = await supabase
-        .from("cvs")
-        .select("file_url")
-        .eq("id", cvId)
-        .single()
-      if (cvData) finalCvUrl = cvData.file_url
-    }
-
-    if (!finalCvUrl) {
-      // Last fallback check for user's primary CV
+    // 2. Resolve which CV to attach. Prefer an explicit cvId; else the user's
+    // primary/newest CV. Store cv_id so the poster can fetch a signed URL.
+    let finalCvId: string | null = cvId && cvId !== "placeholder" ? cvId : null
+    let finalCvUrl = cvUrl || null
+    if (finalCvId) {
+      const { data: cvData } = await supabase.from("cvs").select("id, file_url").eq("id", finalCvId).single()
+      if (cvData) finalCvUrl = cvData.file_url || finalCvUrl
+    } else {
       const { data: userCv } = await supabase
         .from("cvs")
-        .select("file_url")
+        .select("id, file_url")
         .eq("user_id", user.id)
-        .order('created_at', { ascending: false })
+        .order("is_primary", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
-      finalCvUrl = userCv?.file_url || "pending"
+      if (userCv) {
+        finalCvId = userCv.id
+        finalCvUrl = userCv.file_url || finalCvUrl
+      }
     }
 
     // 3. Submit application
-    console.log("[Job Apply] Attempting to insert application:", { jobId, userId: user.id, cv_url: finalCvUrl })
     const defaultCoverLetter = coverLetter || "I am interested in this position."
 
     const payloads = [
       {
         job_id: jobId,
         user_id: user.id,
+        cv_id: finalCvId,
         cv_url: finalCvUrl,
         cover_letter: defaultCoverLetter,
         status: "pending",
@@ -89,6 +88,8 @@ export async function POST(request: Request) {
       {
         job_id: jobId,
         user_id: user.id,
+        cv_id: finalCvId,
+        cover_letter: defaultCoverLetter,
         status: "pending",
       },
     ]

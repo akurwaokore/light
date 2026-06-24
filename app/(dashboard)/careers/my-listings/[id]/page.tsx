@@ -3,6 +3,8 @@
 import { useState, useEffect, use } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { CvViewButton } from "@/components/careers/cv-view-button"
+import { ApplicantActions } from "@/components/careers/applicant-actions"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
@@ -120,12 +122,7 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ id: st
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button asChild size="sm" variant="outline">
-                          <a href={app.cv_url} target="_blank" rel="noopener noreferrer">
-                            <FileText className="mr-2 h-4 w-4" />
-                            View CV
-                          </a>
-                        </Button>
+                        <CvViewButton cvId={(app as any).cv_id} cvUrl={app.cv_url} />
                         <Button asChild size="sm">
                           <Link href={`/profile/${app.applicant.id}`}>
                             View Profile
@@ -145,6 +142,8 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ id: st
                         <p className="text-sm line-clamp-2 text-muted-foreground">{app.applicant.bio}</p>
                       </div>
                     )}
+
+                    <ApplicantActions applicationId={app.id} currentStatus={app.status} />
                   </div>
                 </div>
               </CardContent>

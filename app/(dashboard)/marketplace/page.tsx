@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingBag, Search, Plus, ImageIcon, User, Clock, Package, Share2, ShieldCheck } from "lucide-react"
+import { ShoppingBag, Search, Plus, ImageIcon, User, Clock, Package, Share2, ShieldCheck, Trophy } from "lucide-react"
 import { ProductFormComponent } from "@/components/marketplace/product-form"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { CheckoutDialog } from "@/components/marketplace/checkout-dialog"
+import { CartSheet } from "@/components/marketplace/cart-sheet"
+import { useCart } from "@/hooks/use-cart"
 import { toast } from "sonner"
 
 const currencies = [
@@ -54,6 +56,33 @@ export default function MarketplacePage() {
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false)
   const [checkoutProduct, setCheckoutProduct] = useState<any>(null)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const { add: addToCart } = useCart()
+
+  const handleAddToCart = async (product: any) => {
+    try {
+      await addToCart(product.id, 1)
+      toast.success("Added to cart")
+    } catch (e: any) {
+      toast.error(e.message || "Could not add to cart")
+    }
+  }
+
+  const handleRedeem = async (product: any) => {
+    if (!confirm(`Redeem this with your loyalty points? (${Math.ceil(Number(product.price))} pts)`)) return
+    try {
+      const res = await fetch("/api/marketplace/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Could not redeem")
+      toast.success(`Redeemed for ${data.pointsSpent} points!`)
+      fetchProducts()
+    } catch (e: any) {
+      toast.error(e.message)
+    }
+  }
 
   useEffect(() => {
     fetchProducts()
@@ -159,7 +188,8 @@ export default function MarketplacePage() {
           <h1 className="font-serif text-3xl font-bold">Alumni Marketplace</h1>
           <p className="mt-1 text-muted-foreground">Buy and sell with the alumni community</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <CartSheet />
           <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Add Product</Button>
@@ -314,15 +344,16 @@ export default function MarketplacePage() {
                     </span>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <Button 
-                      className="flex-1 rounded-xl shadow-md active:scale-95 transition-transform" 
-                      onClick={() => {
-                        console.log("[Marketplace] Opening checkout for product:", product)
-                        setCheckoutProduct(product)
-                        setIsCheckoutOpen(true)
-                      }}
+                    <Button
+                      className="flex-1 rounded-xl shadow-md active:scale-95 transition-transform"
+                      disabled={product.quantity === 0}
+                      onClick={() => handleAddToCart(product)}
                     >
-                      Buy Now
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      {product.quantity === 0 ? "Out of stock" : "Add to Cart"}
+                    </Button>
+                    <Button variant="outline" size="icon" className="rounded-xl" disabled={product.quantity === 0} onClick={() => handleRedeem(product)} title="Redeem with loyalty points">
+                      <Trophy className="h-4 w-4" />
                     </Button>
                     <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShareToFeed(product)} title="Share to Feed">
                       <Share2 className="h-4 w-4" />

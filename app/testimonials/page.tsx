@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { PublicNavbar } from "@/components/layout/public-navbar"
+import { PublicFooter } from "@/components/layout/public-footer"
 import { PublicHero } from "@/components/layout/public-hero"
 import { Card, CardContent } from "@/components/ui/card"
 import { Star } from "lucide-react"
@@ -58,11 +59,7 @@ export default function TestimonialsPage() {
         </div>
       </div>
 
-      <footer className="border-t border-white/10 bg-black/30 py-12 text-center text-white/60">
-        <div className="container mx-auto px-4">
-          <p>&copy; {new Date().getFullYear()} Light Group of Schools</p>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   )
 }

@@ -27,6 +27,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Friendship not found" }, { status: 404 })
     }
 
+    // Only the recipient may accept/decline a pending request.
     if (friendship.friend_id !== user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
@@ -82,6 +83,21 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Verify the caller is part of this friendship before deleting (no IDOR).
+    const { data: friendship, error: fetchError } = await supabase
+      .from("friendships")
+      .select("user_id, friend_id")
+      .eq("id", id)
+      .single()
+
+    if (fetchError || !friendship) {
+      return NextResponse.json({ error: "Friendship not found" }, { status: 404 })
+    }
+
+    if (friendship.user_id !== user.id && friendship.friend_id !== user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
     const { error } = await supabase.from("friendships").delete().eq("id", id)

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from("products")
       .select(`
         *,
-        seller:profiles(id, display_name, email, photo_url)
+        seller:profiles(id, display_name, photo_url)
       `)
       .eq("id", id)
       .single()

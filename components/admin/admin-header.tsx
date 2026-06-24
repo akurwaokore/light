@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Bell, Search, Settings, User, LogOut } from "lucide-react"
+import { Bell, Search, Settings, User, LogOut, LayoutDashboard } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
@@ -49,6 +49,13 @@ export function AdminHeader() {
 
 
       <div className="flex items-center gap-2">
+        <Button asChild variant="outline" size="sm" className="gap-2">
+          <Link href="/dashboard">
+            <LayoutDashboard className="h-4 w-4" />
+            <span className="hidden sm:inline">My Dashboard</span>
+          </Link>
+        </Button>
+
         <Link href="/admin/notifications">
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />

@@ -1,143 +1,128 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2, Mail, MapPin, Calendar, Shield, ArrowLeft } from "lucide-react"
+import { Loader2, Mail, Calendar, ArrowLeft, Save, Trophy, Crown } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 
-interface MemberProfile {
-  id: string
-  display_name: string
-  email: string
-  photo_url: string
-  bio: string
-  location: string
-  is_admin: boolean
-  created_at: string
-}
-
-import { use } from "react"
+const TIERS = ["free", "silver", "gold", "platinum"]
 
 export default function MemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const [member, setMember] = useState<MemberProfile | null>(null)
+  const [member, setMember] = useState<any>(null)
+  const [form, setForm] = useState<any>({})
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    const fetchMember = async () => {
-      try {
-        const res = await fetch(`/api/admin/members/${id}`)
-        if (!res.ok) throw new Error("Member not found")
-        const data = await res.json()
+    fetch(`/api/admin/members/${id}`)
+      .then((r) => { if (!r.ok) throw new Error("Member not found"); return r.json() })
+      .then((data) => {
         setMember(data)
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
+        setForm({
+          display_name: data.display_name || "", full_name: data.full_name || "",
+          bio: data.bio || "", location: data.location || "", job_title: data.job_title || "",
+          company: data.company || "", membership_tier: data.membership_tier || "free",
+          points: data.points ?? 0, is_admin: !!data.is_admin, status: data.status || "active",
         })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchMember()
+      })
+      .catch((e) => toast({ title: "Error", description: e.message, variant: "destructive" }))
+      .finally(() => setLoading(false))
   }, [id, toast])
 
-  if (loading) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    )
+  const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/admin/members/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, points: Number(form.points) }),
+      })
+      if (!res.ok) throw new Error((await res.text()) || "Save failed")
+      toast({ title: "Saved", description: "Member profile updated." })
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" })
+    } finally {
+      setSaving(false)
+    }
   }
 
-  if (!member) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
-        <h2 className="text-2xl font-bold">Member not found</h2>
-        <Button asChild variant="outline">
-          <Link href="/admin/members">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Members
-          </Link>
-        </Button>
-      </div>
-    )
-  }
+  if (loading) return <div className="flex h-[400px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+  if (!member) return (
+    <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
+      <h2 className="text-2xl font-bold">Member not found</h2>
+      <Button asChild variant="outline"><Link href="/admin/members"><ArrowLeft className="mr-2 h-4 w-4" />Back</Link></Button>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/admin/members">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Link>
-        </Button>
-        <h1 className="font-heading text-3xl font-bold">Member Details</h1>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button asChild variant="ghost" size="sm"><Link href="/admin/members"><ArrowLeft className="mr-2 h-4 w-4" />Back</Link></Button>
+          <h1 className="font-heading text-3xl font-bold">Edit Member</h1>
+        </div>
+        <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Save</Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Profile Card */}
         <Card className="md:col-span-1">
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={member.photo_url || ""} alt={member.display_name} />
-                <AvatarFallback>{member.display_name?.substring(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
+              <Avatar className="h-24 w-24"><AvatarImage src={member.photo_url || ""} /><AvatarFallback>{member.display_name?.substring(0, 2).toUpperCase()}</AvatarFallback></Avatar>
             </div>
-            <CardTitle>{member.display_name}</CardTitle>
+            <CardTitle>{form.display_name}</CardTitle>
             <CardDescription className="flex items-center justify-center gap-2">
-              {member.is_admin ? (
-                <Badge className="bg-primary">Admin</Badge>
-              ) : (
-                <Badge variant="secondary">Member</Badge>
-              )}
+              {form.is_admin ? <Badge className="bg-primary">Admin</Badge> : <Badge variant="secondary">Member</Badge>}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>{member.email}</span>
+            <div className="flex items-center gap-3 text-sm"><Mail className="h-4 w-4 text-muted-foreground" /><span>{member.email}</span></div>
+            <div className="flex items-center gap-3 text-sm"><Calendar className="h-4 w-4 text-muted-foreground" /><span>Joined {new Date(member.created_at).toLocaleDateString()}</span></div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium"><Trophy className="h-4 w-4 text-amber-500" /> Loyalty points</div>
+              <Input type="number" value={form.points} onChange={(e) => set("points", e.target.value)} />
+              <div className="flex items-center gap-2 pt-2 text-sm font-medium"><Crown className="h-4 w-4 text-primary" /> Membership tier</div>
+              <Select value={form.membership_tier} onValueChange={(v) => set("membership_tier", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{TIERS.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
-            {member.location && (
-              <div className="flex items-center gap-3 text-sm">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{member.location}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>Joined {new Date(member.created_at).toLocaleDateString()}</span>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <Label htmlFor="is_admin">Administrator</Label>
+              <Switch id="is_admin" checked={form.is_admin} onCheckedChange={(v) => set("is_admin", v)} />
             </div>
           </CardContent>
         </Card>
 
-        {/* Content Card */}
         <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>About</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+          <CardHeader><CardTitle>Profile</CardTitle></CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div><Label>Display name</Label><Input value={form.display_name} onChange={(e) => set("display_name", e.target.value)} /></div>
+            <div><Label>Full name</Label><Input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} /></div>
+            <div><Label>Job title</Label><Input value={form.job_title} onChange={(e) => set("job_title", e.target.value)} /></div>
+            <div><Label>Company</Label><Input value={form.company} onChange={(e) => set("company", e.target.value)} /></div>
+            <div><Label>Location</Label><Input value={form.location} onChange={(e) => set("location", e.target.value)} /></div>
             <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Bio</h3>
-              <p className="text-sm">{member.bio || "No bio provided."}</p>
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{["active", "inactive", "suspended"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
+              </Select>
             </div>
-            
-            <div className="pt-4 border-t">
-              <h3 className="text-sm font-medium text-muted-foreground mb-4">Roles & Permissions</h3>
-              <div className="flex items-center gap-2 p-4 bg-muted rounded-lg border italic text-sm">
-                <Shield className="h-4 w-4" />
-                <span>Role assignment for individual users is under development.</span>
-              </div>
-            </div>
+            <div className="sm:col-span-2"><Label>Bio</Label><Textarea value={form.bio} onChange={(e) => set("bio", e.target.value)} /></div>
           </CardContent>
         </Card>
       </div>

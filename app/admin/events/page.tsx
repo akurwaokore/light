@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,12 +47,14 @@ import { EventForm } from "@/components/events/event-form"
 import type { EventFull } from "@/src/types/events"
 
 export default function AdminEventsPage() {
+  const router = useRouter()
   const [events, setEvents] = useState<EventFull[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<EventFull | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
@@ -180,6 +183,31 @@ export default function AdminEventsPage() {
       }
     } catch (error) {
       console.log("[akurwas] Error creating event:", error)
+    }
+  }
+
+  const handleEditEvent = async (data: any) => {
+    if (!selectedEvent) return
+
+    try {
+      const response = await fetch(`/api/events/${selectedEvent.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+
+      if (response.ok) {
+        setShowEditDialog(false)
+        setSelectedEvent(null)
+        toast.success("Event updated successfully!")
+        fetchEvents()
+      } else {
+        const errData = await response.json().catch(() => ({}))
+        toast.error(`Failed to update event: ${errData.error || "Unknown error"}`)
+      }
+    } catch (error) {
+      console.log("[akurwas] Error updating event:", error)
+      toast.error("Error updating event")
     }
   }
 
@@ -398,11 +426,16 @@ export default function AdminEventsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/events/${event.id}`)}>
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedEvent(event)
+                                setShowEditDialog(true)
+                              }}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
@@ -441,6 +474,33 @@ export default function AdminEventsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={showEditDialog}
+        onOpenChange={(open) => {
+          setShowEditDialog(open)
+          if (!open) setSelectedEvent(null)
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>Update the details for &quot;{selectedEvent?.title}&quot;.</DialogDescription>
+          </DialogHeader>
+          {selectedEvent && (
+            <EventForm
+              event={selectedEvent}
+              onSubmit={handleEditEvent}
+              onCancel={() => {
+                setShowEditDialog(false)
+                setSelectedEvent(null)
+              }}
+              isAdmin
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Reject Dialog */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>

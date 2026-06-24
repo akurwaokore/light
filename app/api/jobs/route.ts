@@ -8,6 +8,12 @@ export async function GET(request: Request) {
     const search = searchParams.get("search")
     const category = searchParams.get("category")
     const type = searchParams.get("type")
+    const experience = searchParams.get("experience")
+    const remote = searchParams.get("remote")
+    const salaryMin = searchParams.get("salaryMin")
+    // Strip characters that are meaningful in PostgREST filters to prevent
+    // filter injection through the .or() ilike below.
+    const safeSearch = search ? search.replace(/[,()*:%\\]/g, " ").trim() : ""
 
     let query = supabase
       .from("jobs")
@@ -45,12 +51,15 @@ export async function GET(request: Request) {
       query = query.eq("status", "active")
     }
 
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,company.ilike.%${search}%,location.ilike.%${search}%`)
+    if (safeSearch) {
+      query = query.or(`title.ilike.%${safeSearch}%,company.ilike.%${safeSearch}%,location.ilike.%${safeSearch}%`)
     }
 
     if (category) query = query.eq("category_id", category)
     if (type) query = query.eq("employment_type", type)
+    if (experience) query = query.eq("experience_level", experience)
+    if (remote === "true") query = query.eq("is_remote", true)
+    if (salaryMin && !Number.isNaN(Number(salaryMin))) query = query.gte("salary_max", Number(salaryMin))
 
     const { data: jobs, error } = await query
 
@@ -92,8 +101,12 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // Handle status mapping for constraints
-    const initialStatus = isAdmin ? "active" : "pending_approval"
+    // Auto-approval: admins always go live; everyone else goes live too when
+    // the jobs_auto_approve system setting is on (key/value row).
+    const { data: jobsAutoRow } = await supabase
+      .from("system_settings").select("value").eq("key", "jobs_auto_approve").maybeSingle()
+    const jobsAutoApprove = jobsAutoRow ? (jobsAutoRow.value === true || jobsAutoRow.value === "true") : false
+    const initialStatus = (isAdmin || jobsAutoApprove) ? "active" : "pending_approval"
 
     const { data: job, error } = await supabase
       .from("jobs")
@@ -125,6 +138,19 @@ export async function POST(request: Request) {
     if (error) {
       console.error("[akurwas] Unexpected error creating job:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Award loyalty points for posting a job opening.
+    if (job?.[0]?.id) {
+      await supabase.rpc("award_points", {
+        p_user_id: userData.user.id,
+        p_points: 5,
+        p_type: "earn",
+        p_reason: "Posted a job",
+        p_reference_id: job[0].id,
+        p_reference_type: "job",
+        p_metadata: {},
+      })
     }
 
     return NextResponse.json({ job: job?.[0] }, { status: 201 })

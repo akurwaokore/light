@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { CvViewButton } from "@/components/careers/cv-view-button"
 import { Badge } from "@/components/ui/badge"
 import { 
   Loader2, 
@@ -123,12 +124,8 @@ export default function JobApplicationsPage() {
                   </div>
 
                   <div className="flex flex-col gap-2 min-w-[200px]">
-                    <Button variant="outline" className="w-full gap-2" asChild>
-                      <a href={app.cv_url} target="_blank" rel="noopener noreferrer">
-                        <FileText className="h-4 w-4" />
-                        View CV <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </Button>
+                    <CvViewButton cvId={(app as any).cv_id} cvUrl={app.cv_url} label="View CV" />
+
                     <div className="flex gap-2">
                       <Button 
                         variant="outline" 

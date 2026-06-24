@@ -45,24 +45,23 @@ export async function POST(request: NextRequest) {
       declaration
     } = data
 
-    // 1. Upload CV to Supabase Storage
+    // 1. Upload CV to the PRIVATE `cvs` bucket (never public). A unique path per
+    // upload so multiple CVs don't overwrite each other.
     const fileExt = file.name.split(".").pop()
-    const safeFileName = preferredFileName || `${user.id}-${Date.now()}.${fileExt}`
-    const filePath = `cvs/${user.id}/${safeFileName}`
+    const safeFileName = preferredFileName || `${Date.now()}.${fileExt}`
+    const filePath = `${user.id}/${Date.now()}-${safeFileName}`
 
     const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(filePath, file, { upsert: true })
+      .from("cvs")
+      .upload(filePath, file, { upsert: false })
 
     if (uploadError) {
       console.error("[CV API] Storage upload error:", uploadError)
       return NextResponse.json({ error: uploadError.message || "Failed to upload CV file" }, { status: 500 })
     }
 
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("documents").getPublicUrl(filePath)
+    // Private bucket: no public URL. Access is via short-lived signed URLs.
+    const publicUrl = null
 
     // 2. Update CV profile in database (schema-tolerant)
     const parsedGraduationYear = Number.parseInt(String(graduationYear || ""), 10)
@@ -78,6 +77,7 @@ export async function POST(request: NextRequest) {
       user_name: fullName || null,
       user_email: email || null,
       file_url: publicUrl,
+      storage_path: filePath,
       file_name: safeFileName,
       phone: phone || null,
       city: city || null,
@@ -96,44 +96,28 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     }
 
-    const { data: existingCv, error: existingCvError } = await supabase
+    // Multiple CVs allowed: always insert a new row. Make it primary if it's
+    // the user's first CV.
+    const { count: existingCount } = await supabase
       .from("cvs")
-      .select("id")
+      .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .limit(1)
 
-    if (existingCvError) {
-      console.error("[CV API] Existing CV lookup error:", existingCvError)
-      return NextResponse.json({ error: existingCvError.message || "Failed to process CV data" }, { status: 500 })
-    }
-
-    const hasExistingCv = Array.isArray(existingCv) && existingCv.length > 0
-
-    const dbResult = hasExistingCv
-      ? await supabase.from("cvs").update(payload).eq("user_id", user.id)
-      : await supabase.from("cvs").insert(payload)
-
-    if (dbResult.error) {
-      console.error("[CV API] Database write error:", dbResult.error)
-      return NextResponse.json({ error: dbResult.error.message || "Failed to save CV data" }, { status: 500 })
-    }
-
-    // Get the created CV record to return the ID
-    const { data: cvRecord, error: fetchError } = await supabase
+    const { data: cvRecord, error: insertError } = await supabase
       .from("cvs")
+      .insert({ ...payload, is_primary: (existingCount || 0) === 0, label: data.label || safeFileName })
       .select("id")
-      .eq("user_id", user.id)
       .single()
 
-    if (fetchError) {
-      console.error("Error fetching created CV record:", fetchError)
+    if (insertError) {
+      console.error("[CV API] Database write error:", insertError)
+      return NextResponse.json({ error: insertError.message || "Failed to save CV data" }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
-      file_url: publicUrl,
       file_name: safeFileName,
-      cv_id: cvRecord?.id
+      cv_id: cvRecord?.id,
     })
   } catch (error) {
     console.error("[CV API] Error processing CV submission:", error)

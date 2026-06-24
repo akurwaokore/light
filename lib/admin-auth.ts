@@ -7,61 +7,56 @@ const ALLOWED_ADMIN_EMAILS: string[] = []
 
 export async function checkAdminAccess(requiredPermission?: string) {
   const supabase = await createServerClient()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { authorized: false, status: 401 }
 
-  // 1. Check if user has is_admin flag
+  // Adminness comes from ANY of: profiles.is_admin, an admin/super_admin role,
+  // or the bootstrap email allowlist. This mirrors the admin layout so an admin
+  // is never let into the panel but blocked by the APIs.
   const { data: profile } = await supabase
     .from("profiles")
     .select("is_admin")
     .eq("id", user.id)
-    .single()
+    .maybeSingle()
 
-  if (!profile?.is_admin && !ALLOWED_ADMIN_EMAILS.includes(user.email || "")) {
+  const { data: userRoles } = await supabase
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", user.id)
+  const roles = (userRoles || []).map((ur: any) => (Array.isArray(ur.roles) ? ur.roles[0]?.name : ur.roles?.name)).filter(Boolean)
+
+  const isSuperAdmin = roles.includes("super_admin")
+  const isAdmin =
+    profile?.is_admin === true ||
+    isSuperAdmin ||
+    roles.includes("admin") ||
+    ALLOWED_ADMIN_EMAILS.includes(user.email || "")
+
+  if (!isAdmin) {
     return { authorized: false, status: 403 }
   }
 
-  // 2. If no specific permission is required, being an admin is enough
-  if (!requiredPermission) {
+  // Full admins (is_admin / admin / super_admin) have every permission.
+  if (!requiredPermission || isSuperAdmin || profile?.is_admin === true || roles.includes("admin")) {
     return { authorized: true, supabase, user }
   }
 
-  // 3. Check for Super Admin role (has all permissions)
-  const { data: userRoles } = await supabase
-    .from("user_roles")
-    .select("roles(name, id)")
-    .eq("user_id", user.id)
-
-  const roles = userRoles?.map(ur => (ur.roles as any)?.name) || []
-  
-  if (roles.includes('super_admin')) {
-    return { authorized: true, supabase, user }
-  }
-
-  // 4. Check for specific permission via roles
+  // Otherwise check the specific permission via role_permissions.
   const { data: permissions } = await supabase
     .from("user_roles")
-    .select(`
-      roles!inner (
-        role_permissions!inner (
-          permission_id
-        )
-      )
-    `)
+    .select(`roles!inner ( role_permissions!inner ( permission_id ) )`)
     .eq("user_id", user.id)
 
   const userPermissions = new Set<string>()
   permissions?.forEach((p: any) => {
-    p.roles.role_permissions.forEach((rp: any) => {
-      userPermissions.add(rp.permission_id)
-    })
+    const r = Array.isArray(p.roles) ? p.roles : [p.roles]
+    r.forEach((role: any) => (role?.role_permissions || []).forEach((rp: any) => userPermissions.add(rp.permission_id)))
   })
 
   if (userPermissions.has(requiredPermission)) {
     return { authorized: true, supabase, user }
   }
-
   return { authorized: false, status: 403 }
 }
 

@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
 
 const membershipTiers = [
   {
@@ -63,6 +64,7 @@ export default function PaymentsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
+  const [mpesaPhone, setMpesaPhone] = useState("")
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
@@ -136,6 +138,31 @@ export default function PaymentsPage() {
     } catch (err: any) {
       console.error("Payment initiation error:", err)
       setError(err.message || "Failed to start payment process.")
+      setProcessing(false)
+    }
+  }
+
+  const handleMpesaSubscribe = async (tier: any) => {
+    const phone = (mpesaPhone || "").trim()
+    if (!/^2547\d{8}$/.test(phone)) {
+      setError("Enter your M-Pesa number as 2547XXXXXXXX")
+      return
+    }
+    setProcessing(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/payments/mpesa/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tierId: tier.id, phone }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Failed to start M-Pesa payment")
+      toast.success(data.message || "Check your phone to authorize the payment.")
+      setPaymentStatus("processing")
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
       setProcessing(false)
     }
   }
@@ -262,10 +289,32 @@ export default function PaymentsPage() {
                   {processing ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
-                  {isCurrentTier && membershipStatus?.isActive 
-                    ? "Current Plan" 
-                    : tier.id === "lifetime" ? "Get Lifetime Access" : "Subscribe Now"}
+                  {isCurrentTier && membershipStatus?.isActive
+                    ? "Current Plan"
+                    : tier.id === "lifetime" ? "Get Lifetime Access (PesaPal)" : "Subscribe via PesaPal"}
                 </Button>
+
+                {!(isCurrentTier && membershipStatus?.isActive) && (
+                  <div className="mt-3 space-y-2 rounded-lg border border-green-600/20 bg-green-50/40 p-3">
+                    <p className="text-xs font-medium text-green-700">Or pay with M-Pesa</p>
+                    <Input
+                      placeholder="2547XXXXXXXX"
+                      value={mpesaPhone}
+                      onChange={(e) => setMpesaPhone(e.target.value)}
+                      inputMode="numeric"
+                      className="h-9"
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full border-green-600/40"
+                      disabled={processing}
+                      onClick={() => handleMpesaSubscribe(tier)}
+                    >
+                      {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Pay KES {tier.price.toLocaleString()} with M-Pesa
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )

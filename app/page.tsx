@@ -22,6 +22,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { Motto } from "@/components/motto"
 import { VideoPlayerModal } from "@/components/landing/video-player-modal"
 import { PublicNavbar } from "@/components/layout/public-navbar"
+import { CmsPageRenderer } from "@/components/cms/page-renderer"
+import { PublicFooter } from "@/components/layout/public-footer"
 import { PublicHero } from "@/components/layout/public-hero"
 import { motion, useScroll, useTransform } from "framer-motion"
 
@@ -110,11 +112,20 @@ export default function LandingPage() {
     video_gallery?: any;
   }>({})
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
+  const [homeTree, setHomeTree] = useState<any[]>([])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
   const testimonialsRef = useRef<HTMLDivElement>(null)
   const videoGalleryRef = useRef<HTMLDivElement>(null)
+
+  // Hoisted scroll-parallax hooks. These MUST run on every render (even when the
+  // CMS-driven landing takes over below) to respect the Rules of Hooks.
+  const { scrollYProgress } = useScroll()
+  const heroRotateX = useTransform(scrollYProgress, [0, 0.2], [0, 15])
+  const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95])
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.6])
+  const heroY = useTransform(scrollYProgress, [0, 0.2], [0, -50])
 
   useEffect(() => {
     // Fetch CMS content
@@ -135,6 +146,12 @@ export default function LandingPage() {
     }
 
     fetchCmsContent()
+
+    // If an admin has built a "home" page in the Page Builder, render that instead.
+    fetch("/api/cms/builder?slug=home")
+      .then((r) => r.json())
+      .then((d) => setHomeTree(d.tree || []))
+      .catch(() => {})
 
     // Dynamic import Lenis for smooth scrolling
     import("lenis").then(({ default: Lenis }) => {
@@ -252,10 +269,10 @@ export default function LandingPage() {
       <div className="relative overflow-hidden perspective-[1000px]">
         <motion.div
           style={{
-            rotateX: useTransform(useScroll().scrollYProgress, [0, 0.2], [0, 15]),
-            scale: useTransform(useScroll().scrollYProgress, [0, 0.2], [1, 0.95]),
-            opacity: useTransform(useScroll().scrollYProgress, [0, 0.2], [1, 0.6]),
-            y: useTransform(useScroll().scrollYProgress, [0, 0.2], [0, -50]),
+            rotateX: heroRotateX,
+            scale: heroScale,
+            opacity: heroOpacity,
+            y: heroY,
           }}
           className="origin-top"
         >
@@ -422,11 +439,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/10 bg-black/30 py-12 backdrop-blur-xl text-center text-white/60">
-        <div className="container mx-auto px-4">
-          <p>&copy; {new Date().getFullYear()} Light Group of Schools</p>
-        </div>
-      </footer>
+      <div className="relative z-10">
+        <PublicFooter />
+      </div>
 
       {selectedVideo && <VideoPlayerModal video={selectedVideo} isOpen={!!selectedVideo} onClose={() => setSelectedVideo(null)} />}
     </div>

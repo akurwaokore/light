@@ -216,7 +216,17 @@ export default function CMSPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Content Management System</h1>
                 <p className="text-muted-foreground">Manage your website's dynamic content, sections, and assets.</p>
               </div>
-              <Button onClick={fetchData} variant="outline" size="sm">Refresh Data</Button>
+              <div className="flex items-center gap-2">
+                <Button asChild size="sm">
+                  <a href="/admin/cms/builder"><Layout className="mr-1 h-4 w-4" /> Open Page Builder</a>
+                </Button>
+                <Button onClick={fetchData} variant="outline" size="sm">Refresh Data</Button>
+              </div>
+            </div>
+
+            <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm">
+              <p className="font-medium">New: drag-free Page Builder</p>
+              <p className="text-muted-foreground">Build any page (incl. <code>/p/home</code>) from sections → rows → columns → blocks with full layout control. The tabs below still manage the classic landing sections.</p>
             </div>
 
             <Tabs defaultValue="general" className="space-y-6">

@@ -1,27 +1,20 @@
-import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { checkAdminAccess } from "@/lib/admin-auth"
 
 // POST - Approve or reject event
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const supabase = await createServerClient()
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Check if admin
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    const isAdmin = profile?.role === "admin" || profile?.role === "super_admin"
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Only admins can approve events" }, { status: 403 })
+    // Adminness is determined via the centralized RBAC helper. `profiles` has no
+    // `role` column (roles live in user_roles / the is_admin flag), so checking
+    // it directly always failed and blocked every approval.
+    const { authorized, supabase, user, status } = await checkAdminAccess("manage_events")
+    if (!authorized) {
+      return NextResponse.json(
+        { error: status === 401 ? "Unauthorized" : "Only admins can approve events" },
+        { status: status! },
+      )
     }
 
     const body = await request.json()
@@ -35,7 +28,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       action === "approve"
         ? {
             status: "approved",
-            approved_by: user.id,
+            approved_by: user!.id,
             approved_at: new Date().toISOString(),
             rejection_reason: null,
           }
@@ -44,13 +37,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             rejection_reason: rejection_reason || "No reason provided",
           }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
       .from("events")
       .update(updateData)
       .eq("id", id)
       .select(`
         *,
-        organizer:profiles!events_organizer_id_fkey(id, display_name, email, photo_url)
+        organizer:profiles!events_organizer_id_fkey(id, display_name, photo_url)
       `)
       .single()
 

@@ -28,7 +28,14 @@ export function ChatWindow({ conversationId, recipientName, onClose }: ChatProps
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [otherTyping, setOtherTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const channelRef = useRef<any>(null)
+  const typingTimeout = useRef<any>(null)
+
+  const notifyTyping = () => {
+    channelRef.current?.send({ type: "broadcast", event: "typing", payload: {} })
+  }
 
   useEffect(() => {
     let channel: any;
@@ -50,14 +57,20 @@ export function ChatWindow({ conversationId, recipientName, onClose }: ChatProps
           },
           async (payload: any) => {
             console.log('New message received via realtime:', payload)
-            
+
             // To ensure we get the correct 'me' vs 'other' mapping and mark as read,
             // we re-fetch all messages when a new one comes in.
             // This is safer than trying to map it client-side without knowing the current user's ID.
             await fetchMessages()
           }
         )
+        .on('broadcast', { event: 'typing' }, () => {
+          setOtherTyping(true)
+          if (typingTimeout.current) clearTimeout(typingTimeout.current)
+          typingTimeout.current = setTimeout(() => setOtherTyping(false), 2500)
+        })
         .subscribe()
+      channelRef.current = channel
     }
 
     return () => {
@@ -176,11 +189,14 @@ export function ChatWindow({ conversationId, recipientName, onClose }: ChatProps
         </ScrollArea>
       </CardContent>
       <div className="p-4 border-t bg-background">
+        {otherTyping && (
+          <p className="mb-1 text-xs italic text-muted-foreground">{recipientName} is typing…</p>
+        )}
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <Input 
             placeholder="Type a message..." 
-            value={newMessage} 
-            onChange={e => setNewMessage(e.target.value)}
+            value={newMessage}
+            onChange={e => { setNewMessage(e.target.value); notifyTyping() }}
             className="flex-1"
           />
           <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
