@@ -14,7 +14,7 @@ const publicRoutes = ["/", "/clubs", "/jobs", "/events", "/marketplace", "/givin
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-
+ 
   // Allow public routes
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.next()
