@@ -348,9 +348,11 @@ export default function CareersPage() {
                           <h3 className="font-serif text-xl font-semibold">{job.title}</h3>
                           <Badge
                             variant="secondary"
-                            className={typeColors[job.employment_type as keyof typeof typeColors]}
+                            className={typeColors[(job.employment_type || job.job_type) as keyof typeof typeColors]}
                           >
-                            {job.employment_type.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                            {(job.employment_type || job.job_type || "full-time")
+                              .replace("-", " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase())}
                           </Badge>
                           {job.status === "pending_approval" && (
                             <Badge variant="outline" className="border-orange-200 bg-orange-50 text-orange-700">

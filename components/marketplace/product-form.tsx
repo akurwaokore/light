@@ -91,10 +91,14 @@ export function ProductFormComponent({ productType, onSuccess, editMode = false,
 
         const response = await fetch("/api/upload", {
           method: "POST",
+          credentials: "include",
           body: formData,
         })
 
-        if (!response.ok) throw new Error("Upload failed")
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}))
+          throw new Error(err.error || "Upload failed")
+        }
 
         const data = await response.json()
         setImages((prev) => [...prev, data.url])
@@ -185,6 +189,7 @@ export function ProductFormComponent({ productType, onSuccess, editMode = false,
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           productId: editMode ? existingProduct?.id : undefined,
           title: data.title,

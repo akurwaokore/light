@@ -23,7 +23,7 @@ export function useCart() {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/marketplace/cart")
+      const res = await fetch("/api/marketplace/cart", { credentials: "include" })
       if (!res.ok) {
         setItems([])
         setTotal(0)
@@ -50,6 +50,7 @@ export function useCart() {
     const res = await fetch("/api/marketplace/cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ productId, quantity }),
     })
     const data = await res.json().catch(() => ({}))
@@ -62,6 +63,7 @@ export function useCart() {
     const res = await fetch(`/api/marketplace/cart/${itemId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ quantity }),
     })
     notifyCartChanged()
@@ -72,7 +74,7 @@ export function useCart() {
   }, [])
 
   const remove = useCallback(async (itemId: string) => {
-    await fetch(`/api/marketplace/cart/${itemId}`, { method: "DELETE" })
+    await fetch(`/api/marketplace/cart/${itemId}`, { method: "DELETE", credentials: "include" })
     notifyCartChanged()
   }, [])
 

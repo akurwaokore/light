@@ -68,7 +68,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ jobs: [] })
     }
 
-    return NextResponse.json({ jobs: jobs || [] })
+    // employment_type is nullable in the DB (only job_type is always set); fall
+    // back so the UI never receives null (which crashed the careers page).
+    const normalized = (jobs || []).map((j: any) => ({
+      ...j,
+      employment_type: j.employment_type ?? j.job_type ?? "full-time",
+    }))
+
+    return NextResponse.json({ jobs: normalized })
   } catch (error) {
     console.error("[akurwas] Unexpected error in jobs route:", error)
     return NextResponse.json({ jobs: [] })
