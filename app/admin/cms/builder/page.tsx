@@ -11,7 +11,7 @@ import { toast } from "sonner"
 
 type Block = { id?: string; type: string; content: any }
 type Column = { id?: string; span: number; blocks: Block[] }
-type Row = { id?: string; columns: Column[] }
+type Row = { id?: string; settings?: any; columns: Column[] }
 type Section = { id?: string; section_type: string; is_visible: boolean; settings: any; rows: Row[] }
 
 const BLOCK_TYPES = ["heading", "text", "image", "button", "video", "card", "divider", "spacer", "html"]
@@ -32,12 +32,20 @@ export default function CmsBuilderPage() {
   const [saving, setSaving] = useState(false)
   const [pages, setPages] = useState<any[]>([])
   const [newSlug, setNewSlug] = useState("")
+  const [pageTitle, setPageTitle] = useState("")
+  const [published, setPublished] = useState(true)
+  const [metaDesc, setMetaDesc] = useState("")
+  const [metaKeywords, setMetaKeywords] = useState("")
 
   const load = async (s: string) => {
     setLoading(true)
     try {
       const res = await fetch(`/api/cms/builder?slug=${encodeURIComponent(s)}`)
       const data = await res.json()
+      setPageTitle(data.page?.title || s)
+      setPublished(data.page ? data.page.published !== false : true)
+      setMetaDesc(data.page?.meta_description || "")
+      setMetaKeywords(data.page?.meta_keywords || "")
       setTree((data.tree || []).map((sec: any) => ({
         id: sec.id,
         section_type: sec.section_type || "section",
@@ -45,6 +53,7 @@ export default function CmsBuilderPage() {
         settings: sec.settings || {},
         rows: (sec.rows || []).map((r: any) => ({
           id: r.id,
+          settings: r.settings || {},
           columns: (r.columns || []).map((c: any) => ({ id: c.id, span: c.span || 12, blocks: c.blocks || [] })),
         })),
       })))
@@ -82,11 +91,12 @@ export default function CmsBuilderPage() {
       const res = await fetch("/api/cms/builder", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, tree }),
+        body: JSON.stringify({ slug, tree, title: pageTitle, published, meta_description: metaDesc, meta_keywords: metaKeywords }),
       })
       if (!res.ok) throw new Error((await res.json()).error || "Save failed")
-      toast.success("Page saved")
+      toast.success(published ? "Page saved & published" : "Page saved as draft")
       load(slug)
+      loadPages()
     } catch (e: any) {
       toast.error(e.message)
     } finally {
@@ -97,7 +107,7 @@ export default function CmsBuilderPage() {
   // ---- tree mutators ----
   const update = (fn: (t: Section[]) => void) => setTree((prev) => { const t = clone(prev); fn(t); return t })
   const addSection = () => update((t) => t.push({ section_type: "section", is_visible: true, settings: {}, rows: [] }))
-  const addRow = (si: number) => update((t) => t[si].rows.push({ columns: [{ span: 12, blocks: [] }] }))
+  const addRow = (si: number) => update((t) => t[si].rows.push({ settings: { layout: "grid" }, columns: [{ span: 12, blocks: [] }] }))
   const addColumn = (si: number, ri: number) => update((t) => t[si].rows[ri].columns.push({ span: 6, blocks: [] }))
   const addBlock = (si: number, ri: number, ci: number, type: string) =>
     update((t) => t[si].rows[ri].columns[ci].blocks.push({ type, content: {} }))
@@ -139,6 +149,31 @@ export default function CmsBuilderPage() {
         </div>
       </div>
 
+      {/* Page settings: title, publish state, SEO */}
+      <div className="rounded-lg border bg-card p-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Page title</label>
+            <Input value={pageTitle} onChange={(e) => setPageTitle(e.target.value)} placeholder="Page title" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-muted-foreground">Status</label>
+            <label className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm">
+              <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
+              {published ? "Published (live at /p/" + slug + ")" : "Draft (hidden from visitors)"}
+            </label>
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <label className="text-xs font-semibold text-muted-foreground">SEO description</label>
+            <Textarea value={metaDesc} onChange={(e) => setMetaDesc(e.target.value)} placeholder="Short description for search engines & link previews" className="min-h-[60px]" />
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <label className="text-xs font-semibold text-muted-foreground">SEO keywords (comma separated)</label>
+            <Input value={metaKeywords} onChange={(e) => setMetaKeywords(e.target.value)} placeholder="alumni, networking, careers" />
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : (
@@ -165,9 +200,19 @@ export default function CmsBuilderPage() {
 
                 {section.rows.map((row, ri) => (
                   <div key={ri} className="rounded-lg border border-dashed p-3">
-                    <div className="mb-2 flex items-center justify-between">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <span className="text-sm font-medium">Row {ri + 1}</span>
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-1">
+                        <Select
+                          value={row.settings?.layout || "grid"}
+                          onValueChange={(v) => update((t) => { t[si].rows[ri].settings = { ...(t[si].rows[ri].settings || {}), layout: v } })}
+                        >
+                          <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="grid">12-col grid</SelectItem>
+                            <SelectItem value="flex">Flex (equal)</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <Button size="sm" variant="outline" onClick={() => addColumn(si, ri)}><Plus className="mr-1 h-3 w-3" /> Column</Button>
                         <Button size="icon" variant="ghost" onClick={() => update((t) => { t[si].rows.splice(ri, 1) })}><Trash2 className="h-4 w-4" /></Button>
                       </div>

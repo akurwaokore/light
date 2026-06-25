@@ -26,9 +26,10 @@ export async function GET(request: NextRequest) {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        // Determine membership tier from reference (e.g., "annual-ORDER-123")
+        // Determine membership tier from reference (e.g., "annual-ORDER-123").
+        // Annual => gold, lifetime => platinum (consistent with M-Pesa).
         const isLifetime = orderMerchantReference?.toLowerCase().includes("lifetime")
-        const tier = isLifetime ? "platinum" : "silver"
+        const tier = isLifetime ? "platinum" : "gold"
         
         const startDate = new Date()
         const expiryDate = isLifetime 
@@ -47,12 +48,32 @@ export async function GET(request: NextRequest) {
           })
           .eq("id", user.id)
 
+        // Award the 100 joining/loyalty points once per completed order.
+        const { data: alreadyAwarded } = await supabase
+          .from("points_transactions")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("reference_type", "subscription")
+          .contains("metadata", { ref: orderTrackingId })
+          .maybeSingle()
+        if (!alreadyAwarded) {
+          await supabase.rpc("award_points", {
+            p_user_id: user.id,
+            p_points: 100,
+            p_type: "earn",
+            p_reason: "Membership subscription",
+            p_reference_id: null,
+            p_reference_type: "subscription",
+            p_metadata: { tier, provider: "pesapal", ref: orderTrackingId },
+          })
+        }
+
         // Create notification
         await supabase.from("notifications").insert({
           user_id: user.id,
           type: "general",
           title: "Membership Activated! 🎊",
-          message: `Congratulations! Your ${tier} membership is now active. Explore your new perks.`,
+          message: `Congratulations! Your ${tier} membership is now active. You earned 100 loyalty points!`,
           link: "/profile",
           metadata: { real_type: "membership_activation" }
         })

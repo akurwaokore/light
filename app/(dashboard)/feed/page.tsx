@@ -103,7 +103,30 @@ function CommentItem({
   const [reaction, setReaction] = useState<string | null>(comment.user_reaction || null)
   const [reactionCount, setReactionCount] = useState<number>(comment.reactions_count || 0)
   const [showReactions, setShowReactions] = useState(false)
+  const [content, setContent] = useState<string>(comment.content || "")
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState<string>(comment.content || "")
   const isReply = !!comment.parent_comment_id
+  const isOwner = profile?.id && comment.author?.id === profile.id
+
+  const saveEdit = async () => {
+    const next = editText.trim()
+    if (!next) return
+    try {
+      const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ commentId: comment.id, content: next }),
+      })
+      if (res.ok) {
+        setContent(next)
+        setIsEditing(false)
+      }
+    } catch {
+      /* no-op */
+    }
+  }
 
   const react = async (type: string) => {
     setShowReactions(false)
@@ -132,12 +155,34 @@ function CommentItem({
         <AvatarFallback className="text-[10px]">{comment.author?.display_name?.[0] || "U"}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
-        <div className="inline-block max-w-full rounded-2xl bg-muted/70 px-3 py-2">
-          <p className="text-xs font-bold">{comment.author?.display_name || "Anonymous"}</p>
-          {comment.content && (
-            <RichContent text={comment.content} className="whitespace-pre-wrap break-words text-sm" />
-          )}
-        </div>
+        {isEditing ? (
+          <div className="space-y-1">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              rows={2}
+              autoFocus
+              className="w-full resize-none rounded-2xl bg-muted/70 px-3 py-2 text-sm outline-none"
+            />
+            <div className="flex gap-3 px-1 text-[11px] font-semibold">
+              <button type="button" onClick={saveEdit} className="text-primary hover:underline">Save</button>
+              <button
+                type="button"
+                onClick={() => { setIsEditing(false); setEditText(content) }}
+                className="text-muted-foreground hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="inline-block max-w-full rounded-2xl bg-muted/70 px-3 py-2">
+            <p className="text-xs font-bold">{comment.author?.display_name || "Anonymous"}</p>
+            {content && (
+              <RichContent text={content} className="whitespace-pre-wrap break-words text-sm" />
+            )}
+          </div>
+        )}
         {comment.image_url && (
           <img
             src={comment.image_url}
@@ -187,7 +232,16 @@ function CommentItem({
               {current?.emoji || "👍"} {reactionCount}
             </span>
           )}
-          {profile?.id && comment.author?.id === profile.id && (
+          {isOwner && !isEditing && (
+            <button
+              type="button"
+              onClick={() => { setEditText(content); setIsEditing(true) }}
+              className="hover:underline"
+            >
+              Edit
+            </button>
+          )}
+          {isOwner && (
             <button
               type="button"
               onClick={() => onDeleted(comment.id)}

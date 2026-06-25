@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       } = await supabase.auth.getUser()
 
       if (user) {
-        const tier = "silver"
+        const tier = "gold"
         const startDate = new Date()
         const expiryDate = new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate()).toISOString()
 
@@ -84,11 +84,31 @@ export async function GET(request: NextRequest) {
           })
           .eq("id", user.id)
 
+        // Award the 100 joining/loyalty points once per captured order.
+        const { data: alreadyAwarded } = await supabase
+          .from("points_transactions")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("reference_type", "subscription")
+          .contains("metadata", { ref: token })
+          .maybeSingle()
+        if (!alreadyAwarded) {
+          await supabase.rpc("award_points", {
+            p_user_id: user.id,
+            p_points: 100,
+            p_type: "earn",
+            p_reason: "Membership subscription",
+            p_reference_id: null,
+            p_reference_type: "subscription",
+            p_metadata: { tier, provider: "paypal", ref: token },
+          })
+        }
+
         await supabase.from("notifications").insert({
           user_id: user.id,
           type: "general",
           title: "Membership Activated! 🎊",
-          message: `Congratulations! Your ${tier} membership is now active. Explore your new perks.`,
+          message: `Congratulations! Your ${tier} membership is now active. You earned 100 loyalty points!`,
           link: "/profile",
           metadata: { real_type: "membership_activation", provider: "paypal", order_id: token },
         })

@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { slug, title, meta_description, meta_keywords } = body
+  const { slug, title, meta_description, meta_keywords, published } = body
 
   const { data, error } = await supabase
     .from("cms_pages")
@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
         title,
         meta_description,
         meta_keywords,
+        published: published !== false,
         created_by: user.id,
         updated_by: user.id,
       },

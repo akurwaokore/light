@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Sparkles, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -12,30 +13,65 @@ interface PublicHeroProps {
   title?: string
   description?: string
   image?: string
+  images?: string[]
+  /** Background image opacity 0–100 (default 12). */
+  imageOpacity?: number
   showLogo?: boolean
   scrollProgress?: number
 }
 
-export function PublicHero({ 
-  badge, 
-  title, 
-  description, 
-  image, 
+export function PublicHero({
+  badge,
+  title,
+  description,
+  image,
+  images,
+  imageOpacity = 12,
   showLogo = true,
-  scrollProgress = 0
+  scrollProgress = 0,
 }: PublicHeroProps) {
+  // Build the slide list: explicit images[] first, else the single image.
+  const slides = (images && images.length > 0 ? images : image ? [image] : []).filter(Boolean)
+  const [active, setActive] = useState(0)
+
+  // Auto-advance the slideshow when there's more than one image.
+  useEffect(() => {
+    if (slides.length <= 1) return
+    const t = setInterval(() => setActive((i) => (i + 1) % slides.length), 5000)
+    return () => clearInterval(t)
+  }, [slides.length])
+
+  const op = Math.max(0, Math.min(100, imageOpacity)) / 100
+
   return (
     <section className="relative overflow-hidden py-20 md:py-28">
-      {image && (
+      {slides.length > 0 && (
         <div className="absolute inset-0 z-0">
-          <Image
-            src={image}
-            alt="Hero background"
-            fill
-            className="object-cover opacity-10"
-            priority
-          />
+          {slides.map((src, i) => (
+            <Image
+              key={src + i}
+              src={src}
+              alt="Hero background"
+              fill
+              priority={i === 0}
+              className="object-cover transition-opacity duration-1000 ease-in-out"
+              style={{ opacity: i === active ? op : 0 }}
+            />
+          ))}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/80" />
+          {slides.length > 1 && (
+            <div className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 gap-2">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Show slide ${i + 1}`}
+                  onClick={() => setActive(i)}
+                  className={`h-2 rounded-full transition-all ${i === active ? "w-6 bg-white" : "w-2 bg-white/40"}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
       <div className="container relative z-10 mx-auto px-4">

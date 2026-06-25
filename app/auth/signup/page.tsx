@@ -102,9 +102,9 @@ function SignUpForm() {
             campus: data.campus || null,
             status: "active",
             is_admin: false,
-            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            points: 10,
+            // points are awarded once below via /api/points/award (single source
+            // of truth) — do not set them here or the bonus double-counts.
           },
           { onConflict: "id" },
         )

@@ -68,8 +68,8 @@ export function CartSheet() {
               <div className="space-y-4 py-4">
                 {items.map((it) => (
                   <div key={it.id} className="flex gap-3 border-b pb-4">
-                    <div className="flex-1">
-                      <p className="font-medium line-clamp-1">{it.product?.title}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 font-medium">{it.product?.title}</p>
                       <p className="text-sm text-muted-foreground">
                         KSh {Number(it.unit_price).toLocaleString()} each
                       </p>
@@ -95,7 +95,7 @@ export function CartSheet() {
                         </Button>
                       </div>
                     </div>
-                    <div className="text-right font-semibold">
+                    <div className="shrink-0 text-right text-sm font-semibold">
                       KSh {Number(it.line_total).toLocaleString()}
                     </div>
                   </div>

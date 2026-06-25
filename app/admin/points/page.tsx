@@ -174,7 +174,7 @@ export default function AdminPointsPage() {
                     {index + 1}
                   </div>
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={`/.jpg?height=36&width=36&query=${user.display_name}`} />
+                    <AvatarImage src={user.photo_url || "/placeholder.svg"} />
                     <AvatarFallback>
                       {user.display_name
                         ?.split(" ")

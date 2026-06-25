@@ -179,6 +179,48 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
+// PATCH - Edit the user's own comment text.
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const supabase = await createServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    const { commentId, content } = await request.json()
+    if (!commentId) return NextResponse.json({ error: "Comment ID is required" }, { status: 400 })
+    if (!content || !content.trim()) return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 })
+
+    const { data: existing, error: fetchError } = await supabase
+      .from("comments")
+      .select("id, author_id")
+      .eq("id", commentId)
+      .eq("post_id", id)
+      .maybeSingle()
+    if (fetchError) throw fetchError
+    if (!existing) return NextResponse.json({ error: "Comment not found" }, { status: 404 })
+    if (existing.author_id !== user.id) {
+      return NextResponse.json({ error: "You can only edit your own comment" }, { status: 403 })
+    }
+
+    const { data: updated, error } = await supabase
+      .from("comments")
+      .update({ content: content.trim(), updated_at: new Date().toISOString() })
+      .eq("id", commentId)
+      .eq("author_id", user.id)
+      .select("id, content, image_url, media_urls, created_at, parent_comment_id")
+      .single()
+    if (error) throw error
+
+    return NextResponse.json({ comment: updated, message: "Comment updated" })
+  } catch (error: any) {
+    console.error("Error editing comment:", error)
+    return NextResponse.json({ error: error.message || "Unknown error" }, { status: 500 })
+  }
+}
+
 // DELETE - Remove the user's own comment (cascade removes its replies/reactions).
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

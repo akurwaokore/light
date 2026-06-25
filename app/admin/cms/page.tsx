@@ -22,7 +22,8 @@ import {
   BarChart3,
   Video,
   Youtube,
-  ImagePlus
+  ImagePlus,
+  X
 } from "lucide-react"
 import Image from "next/image"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
@@ -35,11 +36,15 @@ export default function CMSPage() {
   
   // Data State
   const [logo, setLogo] = useState({ url: "/logo.png", alt: "Light Alumni Association" })
-  const [hero, setHero] = useState({
+  const [hero, setHero] = useState<{
+    badge: string; title: string; description: string; bg_image: string; images: string[]; image_opacity: number
+  }>({
     badge: "Welcome to the future of alumni networking",
     title: "Where Light Alumni Shine Together",
     description: "Join the official alumni network of Light Group of Schools. Connect with fellow graduates, advance your career, and give back to the community that shaped you.",
-    bg_image: ""
+    bg_image: "",
+    images: [],
+    image_opacity: 12,
   })
   const [features, setFeatures] = useState<any[]>([])
   const [testimonials, setTestimonials] = useState<any[]>([])
@@ -70,7 +75,14 @@ export default function CMSPage() {
         sections.forEach((section: any) => {
           switch (section.section_name) {
             case 'hero':
-              if (section.content) setHero(section.content)
+              if (section.content) setHero((prev) => ({
+                ...prev,
+                ...section.content,
+                images: Array.isArray(section.content.images)
+                  ? section.content.images
+                  : section.content.bg_image ? [section.content.bg_image] : [],
+                image_opacity: section.content.image_opacity ?? 12,
+              }))
               break
             case 'features':
               if (section.content?.items) setFeatures(section.content.items)
@@ -157,7 +169,12 @@ export default function CMSPage() {
       if (type === 'logo') {
         setLogo((prev) => ({ ...prev, url }))
       } else if (type === 'hero') {
-        setHero((prev) => ({ ...prev, bg_image: url }))
+        // Append to the slideshow; keep bg_image as the first image for back-compat.
+        setHero((prev) => ({
+          ...prev,
+          images: [...(prev.images || []), url],
+          bg_image: prev.bg_image || url,
+        }))
       }
       toast({ title: "Success", description: "Image uploaded successfully" })
       return url
@@ -275,11 +292,37 @@ export default function CMSPage() {
                     <div className="grid gap-2"><Label htmlFor="hero-title">Headline</Label><Input id="hero-title" value={hero.title} onChange={(e) => setHero({ ...hero, title: e.target.value })} /></div>
                     <div className="grid gap-2"><Label htmlFor="hero-desc">Description</Label><Input id="hero-desc" value={hero.description} onChange={(e) => setHero({ ...hero, description: e.target.value })} /></div>
                     <div className="grid gap-2">
-                      <Label>Hero Image (PNG/JPG)</Label>
-                      <div className="flex items-center gap-4">
-                        {hero.bg_image && <div className="relative h-20 w-32 overflow-hidden rounded border bg-slate-900 flex items-center justify-center p-2"><Image src={hero.bg_image} alt="Hero Image" width={80} height={80} className="object-contain h-full w-full" /></div>}
-                        <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'hero')} />
+                      <Label>Hero Images (slideshow)</Label>
+                      <p className="text-xs text-muted-foreground">Add multiple images — they auto-rotate as a background slideshow.</p>
+                      <div className="flex flex-wrap gap-3">
+                        {(hero.images || []).map((img, i) => (
+                          <div key={i} className="relative h-20 w-32 overflow-hidden rounded border bg-slate-900">
+                            <Image src={img} alt={`Hero ${i + 1}`} width={128} height={80} className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              aria-label="Remove image"
+                              onClick={() => setHero((prev) => {
+                                const images = (prev.images || []).filter((_, idx) => idx !== i)
+                                return { ...prev, images, bg_image: images[0] || "" }
+                              })}
+                              className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
+                      <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'hero')} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="hero-opacity">Background image opacity: {hero.image_opacity}%</Label>
+                      <input
+                        id="hero-opacity"
+                        type="range" min={0} max={100} step={1}
+                        value={hero.image_opacity}
+                        onChange={(e) => setHero({ ...hero, image_opacity: Number(e.target.value) })}
+                        className="w-full"
+                      />
                     </div>
                     <div className="flex justify-end"><Button onClick={() => saveSection('hero', hero)} disabled={saving} className="gap-2">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Hero</Button></div>
                   </CardContent>

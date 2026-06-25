@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerClient()
 
     const { data: page } = await supabase
-      .from("cms_pages").select("id, slug, title, published").eq("slug", slug).maybeSingle()
+      .from("cms_pages").select("id, slug, title, published, meta_description, meta_keywords").eq("slug", slug).maybeSingle()
     if (!page) return NextResponse.json({ page: null, tree: [] })
 
     const { data: sections } = await supabase
@@ -51,23 +51,38 @@ export async function GET(request: NextRequest) {
 // PUT { slug, tree } -> atomically replace the page tree (admin only).
 export async function PUT(request: NextRequest) {
   try {
-    const admin = await checkAdminAccess()
+    const admin = (await checkAdminAccess()) as any
     if (!admin.authorized || !admin.supabase) {
       return NextResponse.json({ error: "Forbidden" }, { status: admin.status || 403 })
     }
-    const { slug = "home", title, tree } = await request.json()
+    const { slug = "home", title, tree, published, meta_description, meta_keywords } = await request.json()
 
-    // Ensure the page exists.
+    // Ensure the page exists (new pages default to published so they render).
     let { data: page } = await admin.supabase.from("cms_pages").select("id").eq("slug", slug).maybeSingle()
     if (!page) {
       const { data: created, error } = await admin.supabase
-        .from("cms_pages").insert({ slug, title: title || slug, published: true }).select("id").single()
+        .from("cms_pages")
+        .insert({ slug, title: title || slug, published: published !== false, created_by: admin.user?.id || null })
+        .select("id").single()
       if (error) throw error
       page = created
     }
 
-    const { error: rpcErr } = await admin.supabase.rpc("cms_save_page_tree", { p_page_id: page.id, p_tree: tree || [] })
-    if (rpcErr) throw rpcErr
+    // Persist page metadata (title / publish state / SEO) when provided.
+    const pageUpdate: any = { updated_by: admin.user?.id || null }
+    if (title !== undefined) pageUpdate.title = title
+    if (published !== undefined) pageUpdate.published = published
+    if (meta_description !== undefined) pageUpdate.meta_description = meta_description
+    if (meta_keywords !== undefined) pageUpdate.meta_keywords = meta_keywords
+    if (Object.keys(pageUpdate).length) {
+      await admin.supabase.from("cms_pages").update(pageUpdate).eq("id", page.id)
+    }
+
+    // Only replace the tree when one is supplied (lets metadata-only saves through).
+    if (Array.isArray(tree)) {
+      const { error: rpcErr } = await admin.supabase.rpc("cms_save_page_tree", { p_page_id: page.id, p_tree: tree })
+      if (rpcErr) throw rpcErr
+    }
     return NextResponse.json({ success: true, pageId: page.id })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

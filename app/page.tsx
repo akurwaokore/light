@@ -276,11 +276,13 @@ export default function LandingPage() {
           }}
           className="origin-top"
         >
-          <PublicHero 
+          <PublicHero
             badge={cmsContent.hero?.badge || "Welcome to the future of alumni networking"}
             title={cmsContent.hero?.title || "Where Light Alumni Shine Together"}
             description={cmsContent.hero?.description || "Join the official alumni network of Light Group of Schools. Connect with fellow graduates, advance your career, and give back to the community that shaped you."}
             image={cmsContent.hero?.bg_image}
+            images={cmsContent.hero?.images}
+            imageOpacity={cmsContent.hero?.image_opacity}
             scrollProgress={scrollProgress}
           />
         </motion.div>
@@ -390,60 +392,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="video-gallery" ref={videoGalleryRef} className="relative z-10 py-12 md:py-20">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-2xl text-center mb-12 md:mb-16">
-            <h2 className="font-serif text-4xl font-bold text-white md:text-5xl">
-              {cmsContent.video_gallery?.title || "Our Alumni Journey"}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[200px]">
-            {(cmsContent.video_gallery?.items && cmsContent.video_gallery.items.length > 0) ? (
-              cmsContent.video_gallery.items.map((video: any, index: number) => (
-                <div key={index} className="group relative overflow-hidden rounded-3xl cursor-pointer" onClick={() => setSelectedVideo(video)}>
-                  <img src={video.image_url || "/placeholder.jpg"} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={video.title} />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-all">
-                      <Play className="h-6 w-6 text-white fill-white" />
-                    </div>
-                  </div>
-                  <div className="absolute bottom-4 left-4"><h3 className="text-white font-semibold">{video.title}</h3></div>
-                </div>
-              ))
-            ) : (
-              <>
-                <div className="lg:col-span-2 lg:row-span-2 group relative overflow-hidden rounded-3xl cursor-pointer" onClick={() => setSelectedVideo({ video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", title: "2024 Graduation Ceremony" })}>
-                  <img src="/kenyan-university-graduation-ceremony-students-in-.jpg" className="w-full h-full object-cover" alt="Graduation" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-all">
-                      <Play className="h-8 w-8 text-white fill-white" />
-                    </div>
-                  </div>
-                  <div className="absolute bottom-4 left-4"><h3 className="text-white font-semibold text-xl">2024 Graduation Ceremony</h3></div>
-                </div>
-                <div className="group relative overflow-hidden rounded-3xl cursor-pointer" onClick={() => setSelectedVideo({ video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", title: "Alumni Networking Night" })}>
-                  <img src="/african-professionals-networking-event-nairobi-ken.jpg" className="w-full h-full object-cover" alt="Networking" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <Play className="h-8 w-8 text-white fill-white" />
-                  </div>
-                </div>
-                <div className="group relative overflow-hidden rounded-3xl cursor-pointer" onClick={() => setSelectedVideo({ video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", title: "Alumni Sports Day" })}>
-                  <img src="/kenyan-students-playing-football-soccer-sports-day.jpg" className="w-full h-full object-cover" alt="Sports" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <Play className="h-8 w-8 text-white fill-white" />
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </section>
+      {/* Video gallery removed from the home page — there is a dedicated /video-gallery page. */}
 
       <div className="relative z-10">
         <PublicFooter />
       </div>
-
-      {selectedVideo && <VideoPlayerModal video={selectedVideo} isOpen={!!selectedVideo} onClose={() => setSelectedVideo(null)} />}
     </div>
   )
 }

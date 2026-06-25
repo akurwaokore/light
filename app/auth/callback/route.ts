@@ -47,7 +47,7 @@ export async function GET(request: Request) {
             is_admin: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            points: 10,
+            // points awarded once below via award_points (avoids double-count).
           }
 
           const { error: profileError } = await supabase.from("profiles").insert(profileData)

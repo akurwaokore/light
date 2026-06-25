@@ -158,7 +158,7 @@ export function ApplyModal({ job, isOpen, onClose }: ApplyModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Apply for {job?.title}</DialogTitle>
           <DialogDescription>
@@ -189,9 +189,9 @@ export function ApplyModal({ job, isOpen, onClose }: ApplyModalProps) {
                     <SelectContent>
                       {cvs.map((cv) => (
                         <SelectItem key={cv.id} value={cv.id}>
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            <span>{cv.file_name || "Resume"} ({new Date(cv.created_at).toLocaleDateString()})</span>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <FileText className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{cv.file_name || "Resume"} ({new Date(cv.created_at).toLocaleDateString()})</span>
                           </div>
                         </SelectItem>
                       ))}

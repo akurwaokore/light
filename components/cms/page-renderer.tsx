@@ -14,13 +14,13 @@ function Block({ block }: { block: any }) {
   const c = block.content || {}
   switch (block.type) {
     case "heading":
-      return <h2 className="font-serif text-2xl font-bold md:text-3xl" style={{ textAlign: c.align }}>{c.text}</h2>
+      return <h2 className="font-serif text-2xl font-bold break-words md:text-3xl" style={{ textAlign: c.align }}>{c.text}</h2>
     case "text":
-      return <p className="leading-relaxed text-muted-foreground" style={{ textAlign: c.align }}>{c.text}</p>
+      return <p className="leading-relaxed break-words text-muted-foreground" style={{ textAlign: c.align }}>{c.text}</p>
     case "image":
       return c.url ? (
-        <div className="relative overflow-hidden rounded-lg">
-          <Image src={c.url} alt={c.alt || ""} width={c.width || 800} height={c.height || 500} className="h-auto w-full object-cover" unoptimized />
+        <div className="relative w-full overflow-hidden rounded-lg">
+          <Image src={c.url} alt={c.alt || ""} width={c.width || 800} height={c.height || 500} className="h-auto w-full max-w-full object-cover" unoptimized />
         </div>
       ) : null
     case "button":
@@ -47,7 +47,7 @@ function Block({ block }: { block: any }) {
     case "spacer":
       return <div style={{ height: c.height || 32 }} />
     case "html":
-      return <div dangerouslySetInnerHTML={{ __html: c.html || "" }} />
+      return <div className="max-w-full overflow-x-auto break-words" dangerouslySetInnerHTML={{ __html: c.html || "" }} />
     default:
       return null
   }
@@ -60,19 +60,36 @@ export function CmsPageRenderer({ tree }: { tree: any[] }) {
       {tree.filter((s) => s.is_visible !== false).map((section) => {
         const ss = section.settings || {}
         return (
-          <section key={section.id} className="w-full" style={{ background: ss.background, padding: ss.padding }}>
-            <div className="container mx-auto space-y-8 px-4 py-10 md:py-16">
-              {(section.rows || []).map((row: any) => (
-                <div key={row.id} className="grid grid-cols-1 gap-6 md:grid-cols-12">
-                  {(row.columns || []).map((col: any) => (
-                    <div key={col.id} className={`space-y-4 ${spanClass[col.span] || "md:col-span-12"}`}>
-                      {(col.blocks || []).map((block: any) => (
-                        <Block key={block.id} block={block} />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ))}
+          <section key={section.id} className="w-full overflow-hidden" style={{ background: ss.background, padding: ss.padding }}>
+            <div className="container mx-auto max-w-full space-y-8 px-4 py-10 md:py-16">
+              {(section.rows || []).map((row: any) => {
+                const rs = row.settings || {}
+                // Rows default to a responsive 12-col grid (stacks on mobile).
+                // Set settings.layout = "flex" for a wrap-flex row instead.
+                const isFlex = rs.layout === "flex"
+                return (
+                  <div
+                    key={row.id}
+                    className={isFlex ? "flex flex-col gap-6 md:flex-row md:flex-wrap" : "grid grid-cols-1 gap-6 md:grid-cols-12"}
+                    style={rs.align ? { alignItems: rs.align } : undefined}
+                  >
+                    {(row.columns || []).map((col: any) => (
+                      <div
+                        key={col.id}
+                        className={
+                          isFlex
+                            ? "min-w-0 flex-1 space-y-4"
+                            : `min-w-0 space-y-4 ${spanClass[col.span] || "md:col-span-12"}`
+                        }
+                      >
+                        {(col.blocks || []).map((block: any) => (
+                          <Block key={block.id} block={block} />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
             </div>
           </section>
         )
