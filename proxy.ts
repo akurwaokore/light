@@ -23,7 +23,7 @@ export async function proxy(request: NextRequest) {
   // Check authentication for protected routes
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
     const cookieStore = request.cookies
-
+ 
     try {
       // Supabase auth token is usually 'sb-xxx-auth-token' or similar depending on setup
       // For now we assume 'sb-auth-token' as per current implementation
