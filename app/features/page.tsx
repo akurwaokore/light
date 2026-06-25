@@ -17,7 +17,7 @@ export default function FeaturesPage() {
         if (res.ok) {
           const sections = await res.json()
           const features = sections.find((s: any) => s.section_name === 'features')
-          const hero = sections.find((s: any) => s.section_name === 'hero')
+          const hero = sections.find((s: any) => s.section_name === 'hero:features')
           setCmsContent({ features: features?.content || {}, hero: hero?.content || {} })
         }
       } catch (err) {
@@ -32,11 +32,13 @@ export default function FeaturesPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <PublicNavbar />
-      <PublicHero 
-        badge="Tailored for Graduates"
-        title={cmsContent.features?.title || "Platform Features"}
-        description={cmsContent.features?.subtitle || "Explore the tools and benefits designed for our alumni community."}
+      <PublicHero
+        badge={cmsContent.hero?.badge || "Tailored for Graduates"}
+        title={cmsContent.hero?.title || cmsContent.features?.title || "Platform Features"}
+        description={cmsContent.hero?.description || cmsContent.features?.subtitle || "Explore the tools and benefits designed for our alumni community."}
         image={cmsContent.hero?.bg_image}
+        images={cmsContent.hero?.images}
+        imageOpacity={cmsContent.hero?.image_opacity}
         showLogo={true}
       />
       

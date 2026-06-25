@@ -70,7 +70,7 @@ export default function PublicEventsPage() {
       const res = await fetch("/api/cms/sections")
       if (res.ok) {
         const sections = await res.json()
-        const hero = sections.find((s: any) => s.section_name === 'hero')
+        const hero = sections.find((s: any) => s.section_name === 'hero:public-events')
         if (hero) setCmsContent({ hero: hero.content })
       }
     } catch (err) {
@@ -105,11 +105,13 @@ export default function PublicEventsPage() {
       <WaveBackground />
       <PublicNavbar />
       
-      <PublicHero 
-        badge="Join our next gathering"
-        title="Alumni Events & Meetups"
-        description="Reconnect, network, and grow with fellow alumni. Browse our upcoming professional and social events."
+      <PublicHero
+        badge={cmsContent.hero?.badge || "Join our next gathering"}
+        title={cmsContent.hero?.title || "Alumni Events & Meetups"}
+        description={cmsContent.hero?.description || "Reconnect, network, and grow with fellow alumni. Browse our upcoming professional and social events."}
         image={cmsContent.hero?.bg_image}
+        images={cmsContent.hero?.images}
+        imageOpacity={cmsContent.hero?.image_opacity}
         scrollProgress={0}
       />
 

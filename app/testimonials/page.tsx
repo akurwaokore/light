@@ -17,7 +17,7 @@ export default function TestimonialsPage() {
         if (res.ok) {
           const sections = await res.json()
           const testimonials = sections.find((s: any) => s.section_name === 'testimonials')
-          const hero = sections.find((s: any) => s.section_name === 'hero')
+          const hero = sections.find((s: any) => s.section_name === 'hero:testimonials')
           setCmsContent({ testimonials: testimonials?.content || {}, hero: hero?.content || {} })
         }
       } catch (err) {
@@ -30,11 +30,13 @@ export default function TestimonialsPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <PublicNavbar />
-      <PublicHero 
-        badge="Community Voices"
-        title={cmsContent.testimonials?.title || "Success Stories"}
-        description={cmsContent.testimonials?.subtitle || "Hear from our alumni about how the Light Alumni Network has shaped their journeys."}
+      <PublicHero
+        badge={cmsContent.hero?.badge || "Community Voices"}
+        title={cmsContent.hero?.title || cmsContent.testimonials?.title || "Success Stories"}
+        description={cmsContent.hero?.description || cmsContent.testimonials?.subtitle || "Hear from our alumni about how the Light Alumni Network has shaped their journeys."}
         image={cmsContent.hero?.bg_image}
+        images={cmsContent.hero?.images}
+        imageOpacity={cmsContent.hero?.image_opacity}
         showLogo={true}
       />
       

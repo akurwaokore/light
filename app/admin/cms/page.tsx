@@ -46,6 +46,17 @@ export default function CMSPage() {
     images: [],
     image_opacity: 12,
   })
+  // Each front-end page has its own editable hero, stored as a distinct CMS
+  // section ("hero" for home, "hero:<slug>" for the rest).
+  const HERO_PAGES = [
+    { slug: "home", label: "Home" },
+    { slug: "features", label: "Features" },
+    { slug: "testimonials", label: "Testimonials" },
+    { slug: "video-gallery", label: "Video Gallery" },
+    { slug: "public-events", label: "Public Events" },
+  ]
+  const [heroPage, setHeroPage] = useState("home")
+  const heroSectionName = (slug: string) => (slug === "home" ? "hero" : `hero:${slug}`)
   const [features, setFeatures] = useState<any[]>([])
   const [testimonials, setTestimonials] = useState<any[]>([])
   const [stats, setStats] = useState<any[]>([])
@@ -74,16 +85,6 @@ export default function CMSPage() {
         const sections = await sectionsRes.json()
         sections.forEach((section: any) => {
           switch (section.section_name) {
-            case 'hero':
-              if (section.content) setHero((prev) => ({
-                ...prev,
-                ...section.content,
-                images: Array.isArray(section.content.images)
-                  ? section.content.images
-                  : section.content.bg_image ? [section.content.bg_image] : [],
-                image_opacity: section.content.image_opacity ?? 12,
-              }))
-              break
             case 'features':
               if (section.content?.items) setFeatures(section.content.items)
               break
@@ -106,10 +107,31 @@ export default function CMSPage() {
     }
   }
 
+  // Load the hero for the currently-selected page into the editor.
+  const loadHero = async (slug: string) => {
+    try {
+      const res = await fetch(`/api/cms/sections?name=${encodeURIComponent(heroSectionName(slug))}`)
+      if (!res.ok) return
+      const section = await res.json()
+      const content = section?.content || {}
+      setHero({
+        badge: content.badge ?? "",
+        title: content.title ?? "",
+        description: content.description ?? "",
+        bg_image: content.bg_image ?? "",
+        images: Array.isArray(content.images) ? content.images : content.bg_image ? [content.bg_image] : [],
+        image_opacity: content.image_opacity ?? 12,
+      })
+    } catch (e) {
+      console.error("[CMS] loadHero error:", e)
+    }
+  }
+  useEffect(() => { loadHero(heroPage) }, [heroPage]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const saveSection = async (name: string, content: any) => {
     setSaving(true)
     try {
-      const res = await fetch(`/api/cms/sections?name=${name}`, {
+      const res = await fetch(`/api/cms/sections?name=${encodeURIComponent(name)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
@@ -286,8 +308,20 @@ export default function CMSPage() {
               {/* Hero Tab */}
               <TabsContent value="hero" className="space-y-6">
                 <Card>
-                  <CardHeader><CardTitle>Hero Section</CardTitle><CardDescription>Manage the hero content and main image.</CardDescription></CardHeader>
+                  <CardHeader><CardTitle>Hero Section</CardTitle><CardDescription>Each page has its own hero — pick a page, then edit its hero.</CardDescription></CardHeader>
                   <CardContent className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label>Editing hero for page</Label>
+                      <select
+                        value={heroPage}
+                        onChange={(e) => setHeroPage(e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm md:w-64"
+                      >
+                        {HERO_PAGES.map((p) => (
+                          <option key={p.slug} value={p.slug}>{p.label}</option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="grid gap-2"><Label htmlFor="hero-badge">Badge Text</Label><Input id="hero-badge" value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} /></div>
                     <div className="grid gap-2"><Label htmlFor="hero-title">Headline</Label><Input id="hero-title" value={hero.title} onChange={(e) => setHero({ ...hero, title: e.target.value })} /></div>
                     <div className="grid gap-2"><Label htmlFor="hero-desc">Description</Label><Input id="hero-desc" value={hero.description} onChange={(e) => setHero({ ...hero, description: e.target.value })} /></div>
@@ -324,7 +358,7 @@ export default function CMSPage() {
                         className="w-full"
                       />
                     </div>
-                    <div className="flex justify-end"><Button onClick={() => saveSection('hero', hero)} disabled={saving} className="gap-2">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Hero</Button></div>
+                    <div className="flex justify-end"><Button onClick={() => saveSection(heroSectionName(heroPage), hero)} disabled={saving} className="gap-2">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Hero</Button></div>
                   </CardContent>
                 </Card>
               </TabsContent>

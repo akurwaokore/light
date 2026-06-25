@@ -18,7 +18,7 @@ export default function VideoGalleryPage() {
         if (res.ok) {
           const sections = await res.json()
           const gallery = sections.find((s: any) => s.section_name === 'video_gallery')
-          const hero = sections.find((s: any) => s.section_name === 'hero')
+          const hero = sections.find((s: any) => s.section_name === 'hero:video-gallery')
           setCmsContent({ gallery: gallery?.content || {}, hero: hero?.content || {} })
         }
       } catch (err) {
@@ -31,11 +31,13 @@ export default function VideoGalleryPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <PublicNavbar />
-      <PublicHero 
-        badge="Memorable Moments"
-        title={cmsContent.gallery?.title || "Video Gallery"}
-        description={cmsContent.gallery?.subtitle || "Relive the best moments from our alumni events and reunions."}
+      <PublicHero
+        badge={cmsContent.hero?.badge || "Memorable Moments"}
+        title={cmsContent.hero?.title || cmsContent.gallery?.title || "Video Gallery"}
+        description={cmsContent.hero?.description || cmsContent.gallery?.subtitle || "Relive the best moments from our alumni events and reunions."}
         image={cmsContent.hero?.bg_image}
+        images={cmsContent.hero?.images}
+        imageOpacity={cmsContent.hero?.image_opacity}
         showLogo={true}
       />
       
