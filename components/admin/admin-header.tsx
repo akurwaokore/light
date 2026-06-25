@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 export function AdminHeader() {
   const [mounted, setMounted] = useState(false)
@@ -56,12 +57,7 @@ export function AdminHeader() {
           </Link>
         </Button>
 
-        <Link href="/admin/notifications">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">5</Badge>
-          </Button>
-        </Link>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

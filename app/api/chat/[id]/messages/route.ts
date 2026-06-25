@@ -79,6 +79,34 @@ export async function POST(
 
     if (error) throw error
 
+    // Notify the other participant(s) so the message surfaces in the bell.
+    // Best-effort — never fail the message on a notify error.
+    try {
+      const { data: others } = await supabase
+        .from("chat_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", user.id)
+
+      if (others && others.length > 0) {
+        const { data: me } = await supabase
+          .from("profiles").select("display_name").eq("id", user.id).maybeSingle()
+        const preview = String(content).slice(0, 60)
+        await supabase.from("notifications").insert(
+          others.map((o: any) => ({
+            user_id: o.user_id,
+            type: "message",
+            title: `New message from ${me?.display_name || "someone"}`,
+            message: preview,
+            link: "/friends",
+            metadata: { conversation_id: conversationId, sender_id: user.id, real_type: "message" },
+          })),
+        )
+      }
+    } catch (notifyErr) {
+      console.warn("[Messages API] notify failed:", notifyErr)
+    }
+
     return NextResponse.json({
       ...message,
       sender_id: "me",

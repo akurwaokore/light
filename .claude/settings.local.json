@@ -90,7 +90,14 @@
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select tablename, policyname, cmd, with_check, qual from pg_policies where schemaname='public' and tablename in \\('carts','cart_items','orders','order_items'\\) order by tablename, cmd;\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on c.relnamespace=n.oid where n.nspname='public' and c.relname in \\('carts','cart_items','orders','order_items'\\);\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select proname, prosecdef as security_definer from pg_proc where proname in \\('create_order_from_cart','expire_stale_orders'\\);\")",
-      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select policyname, cmd, with_check from pg_policies where schemaname='public' and tablename='products' and cmd in \\('INSERT','ALL'\\) order by cmd;\")"
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select policyname, cmd, with_check from pg_policies where schemaname='public' and tablename='products' and cmd in \\('INSERT','ALL'\\) order by cmd;\")",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(xargs basename -a)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select type, count\\(*\\) c from notifications group by type order by c desc;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select title, message, type, read, link, action_url from notifications order by created_at desc limit 5;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select slug, title from cms_pages order by slug;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select \\(select count\\(*\\) from profiles\\) members, \\(select count\\(*\\) from profiles where status='active'\\) active, \\(select count\\(*\\) from event_registrations\\) rsvps, \\(select coalesce\\(sum\\(amount\\),0\\) from donations where lower\\(status\\) in \\('completed','succeeded','paid','success'\\)\\) donations, \\(select count\\(*\\) from posts\\) posts, \\(select count\\(*\\) from products\\) products, \\(select count\\(*\\) from jobs\\) jobs, \\(select count\\(*\\) from clubs\\) clubs;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select constraint_name from information_schema.table_constraints where table_name='clubs' and constraint_type='FOREIGN KEY';\")"
     ]
   }
 }

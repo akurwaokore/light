@@ -21,25 +21,16 @@ export function AnimatedLogo({ scrollProgress }: AnimatedLogoProps) {
   useReactEffect(() => {
     const fetchLogo = async () => {
       try {
-        // First try fetching hero image for the animated logo
-        const sectionsRes = await fetch("/api/cms/sections")
-        if (sectionsRes.ok) {
-          const sections = await sectionsRes.json()
-          const hero = sections.find((s: any) => s.section_name === 'hero')
-          if (hero?.content?.bg_image) {
-            setLogoUrl(hero.content.bg_image)
-            return
-          }
-        }
-        
-        // Fallback to CMS logo
+        // The logo is ALWAYS the configured CMS logo (key=logo). It must never
+        // be replaced by the hero background image — changing the hero
+        // background should only affect the background, not the logo.
         const res = await fetch(`/api/cms/settings?key=logo&t=${Date.now()}`)
         if (res.ok) {
           const data = await res.json()
           if (data && data.url) setLogoUrl(data.url)
         }
       } catch (err) {
-        console.error("Error fetching logo for hero:", err)
+        console.error("Error fetching logo:", err)
       }
     }
     fetchLogo()

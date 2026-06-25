@@ -73,28 +73,25 @@ export default function AnalyticsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Page Views</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.pageViews || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-green-500">
+            <div className="text-2xl font-bold">{stats?.totalMembers ?? 0}</div>
+            <div className={`flex items-center gap-1 text-xs ${(stats?.memberGrowthPct ?? 0) >= 0 ? "text-green-500" : "text-red-500"}`}>
               <ArrowUpRight className="h-3 w-3" />
-              0% vs last period
+              {stats?.memberGrowthPct ?? 0}% vs last 30 days
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.activeUsers || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-green-500">
-              <ArrowUpRight className="h-3 w-3" />
-              0% vs last period
-            </div>
+            <div className="text-2xl font-bold">{stats?.activeUsers ?? 0}</div>
+            <p className="text-xs text-muted-foreground">of {stats?.totalMembers ?? 0} members</p>
           </CardContent>
         </Card>
         <Card>
@@ -103,11 +100,8 @@ export default function AnalyticsPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.eventRSVPs || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-green-500">
-              <ArrowUpRight className="h-3 w-3" />
-              0% vs last period
-            </div>
+            <div className="text-2xl font-bold">{stats?.eventRSVPs ?? 0}</div>
+            <p className="text-xs text-muted-foreground">across {stats?.totalEvents ?? 0} events</p>
           </CardContent>
         </Card>
         <Card>
@@ -116,10 +110,10 @@ export default function AnalyticsPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">KES {stats?.totalDonations || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-green-500">
+            <div className="text-2xl font-bold">KES {(stats?.totalDonations ?? 0).toLocaleString()}</div>
+            <div className={`flex items-center gap-1 text-xs ${(stats?.donationGrowthPct ?? 0) >= 0 ? "text-green-500" : "text-red-500"}`}>
               <ArrowUpRight className="h-3 w-3" />
-              0% vs last period
+              {stats?.donationGrowthPct ?? 0}% vs last 30 days
             </div>
           </CardContent>
         </Card>
@@ -136,35 +130,38 @@ export default function AnalyticsPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle>Page Views & Visitors</CardTitle>
-                <CardDescription>Daily traffic visualization coming soon</CardDescription>
+                <CardTitle>Member Growth</CardTitle>
+                <CardDescription>New members joining each month (last 6 months)</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[350px] flex items-center justify-center border-2 border-dashed rounded-lg">
-                  <p className="text-sm text-muted-foreground">Real-time traffic data integration in progress</p>
-                </div>
+                <ResponsiveContainer width="100%" height={350}>
+                  <AreaChart data={stats?.memberGrowth || []}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="month" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="value" name="New members" stroke="#1e3a8a" fill="#1e3a8a" fillOpacity={0.15} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Top Pages</CardTitle>
-                <CardDescription>Most visited sections</CardDescription>
+                <CardTitle>Top Sections</CardTitle>
+                <CardDescription>By total content created</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {["Dashboard", "Events", "Feed", "Careers", "Marketplace"].map((page, index) => (
-                    <div key={page} className="flex items-center justify-between">
+                  {(stats?.topSections || []).map((section: any, index: number) => (
+                    <div key={section.name} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
                           {index + 1}
                         </div>
-                        <span className="font-medium">{page}</span>
+                        <span className="font-medium">{section.name}</span>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium">0</p>
-                        <p className="text-xs text-green-500">+0%</p>
-                      </div>
+                      <p className="font-medium">{section.count}</p>
                     </div>
                   ))}
                 </div>
@@ -177,12 +174,18 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Member Activity</CardTitle>
-              <CardDescription>Logins, posts, and event registrations over time</CardDescription>
+              <CardDescription>Posts created each month (last 6 months)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px] flex items-center justify-center border-2 border-dashed rounded-lg">
-                <p className="text-sm text-muted-foreground">Activity tracking dashboard coming soon</p>
-              </div>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={stats?.engagement || []}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="month" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" name="Posts" fill="#1e3a8a" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>
@@ -191,12 +194,18 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Donation Trends</CardTitle>
-              <CardDescription>Monthly donation amounts in KES</CardDescription>
+              <CardDescription>Monthly donation amounts in KES (last 6 months)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px] flex items-center justify-center border-2 border-dashed rounded-lg">
-                <p className="text-sm text-muted-foreground">Payment gateway analytics integration in progress</p>
-              </div>
+              <ResponsiveContainer width="100%" height={400}>
+                <AreaChart data={stats?.donationTrend || []}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(v: any) => `KES ${Number(v).toLocaleString()}`} />
+                  <Area type="monotone" dataKey="value" name="Donations" stroke="#16a34a" fill="#16a34a" fillOpacity={0.15} />
+                </AreaChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </TabsContent>

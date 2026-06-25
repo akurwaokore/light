@@ -32,7 +32,7 @@ export function PublicHero({
             src={image}
             alt="Hero background"
             fill
-            className="object-cover opacity-20"
+            className="object-cover opacity-10"
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950/80" />
