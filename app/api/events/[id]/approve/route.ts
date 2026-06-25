@@ -25,17 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const updateData =
-      action === "approve"
-        ? {
-            status: "approved",
-            approved_by: user!.id,
-            approved_at: new Date().toISOString(),
-            rejection_reason: null,
-          }
-        : {
-            status: "rejected",
-            rejection_reason: rejection_reason || "No reason provided",
-          }
+      action === "approve" ? { status: "approved" } : { status: "rejected" }
 
     const { data, error } = await supabase!
       .from("events")

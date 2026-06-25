@@ -534,7 +534,8 @@ export default function FeedPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        credentials: "include",
+        body: JSON.stringify({
           content: newPostContent,
           image_url: newPostImage,
           video_url: newPostVideo,

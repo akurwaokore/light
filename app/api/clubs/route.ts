@@ -14,36 +14,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Fetch clubs from database with member counts
+    // Fetch clubs. Member counts are computed with a separate query because
+    // club_memberships has no FK to clubs, so a PostgREST embed would fail.
     const { data: clubs, error } = await supabase
       .from("clubs")
-      .select(`
-        *,
-        club_memberships(count)
-      `)
+      .select("*")
       .order("name", { ascending: true })
-
-    // Map counts correctly
-    const clubsWithCounts = clubs?.map(club => ({
-      ...club,
-      members_count: club.club_memberships?.[0]?.count || 0
-    }))
-
-    let userMemberships: string[] = []
-    if (user) {
-      const { data: memberships } = await supabase
-        .from("club_memberships")
-        .select("club_id")
-        .eq("user_id", user.id)
-      
-      if (memberships) {
-        userMemberships = memberships.map(m => m.club_id)
-      }
-    }
 
     if (error) {
       console.error("[akurwas] Error fetching clubs:", error)
       return NextResponse.json({ error: "Failed to fetch clubs" }, { status: 500 })
+    }
+
+    const { data: allMemberships } = await supabase.from("club_memberships").select("club_id, user_id")
+    const counts: Record<string, number> = {}
+    for (const m of allMemberships || []) {
+      counts[m.club_id] = (counts[m.club_id] || 0) + 1
+    }
+
+    const clubsWithCounts = (clubs || []).map((club) => ({
+      ...club,
+      members_count: counts[club.id] || club.member_count || 0,
+    }))
+
+    let userMemberships: string[] = []
+    if (user) {
+      userMemberships = (allMemberships || [])
+        .filter((m) => m.user_id === user.id)
+        .map((m) => m.club_id)
     }
 
     return NextResponse.json({ 

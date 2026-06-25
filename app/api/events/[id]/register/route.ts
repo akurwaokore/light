@@ -15,21 +15,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if event exists and is approved
-    const { data: event } = await supabase.from("events").select("*").eq("id", id).single()
+    // Live events schema: status / capacity / registrations_count / ticket_price.
+    const { data: event } = await supabase
+      .from("events")
+      .select("id, title, status, capacity, registrations_count, ticket_price, organizer_id")
+      .eq("id", id)
+      .single()
 
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    if (event.status !== "approved" && event.status !== "upcoming") {
+    if (event.status !== "approved" && event.status !== "upcoming" && event.status !== "active") {
       return NextResponse.json({ error: "Event is not available for registration" }, { status: 400 })
     }
 
-    // Check max attendees
-    if (event.max_attendees && event.registered_count >= event.max_attendees) {
+    if (event.capacity && (event.registrations_count ?? 0) >= event.capacity) {
       return NextResponse.json({ error: "Event is full" }, { status: 400 })
     }
+
+    const price = Number(event.ticket_price) || 0
 
     const { data, error } = await supabase
       .from("event_registrations")
@@ -37,8 +42,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         event_id: id,
         user_id: user.id,
         status: "registered",
-        payment_status: event.is_free ? null : "pending",
-        payment_amount: event.is_free ? null : event.ticket_price,
+        paid_amount: price,
       })
       .select()
       .single()
@@ -50,15 +54,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Create notification for event organizer
+    // Keep the denormalized count in sync (no DB trigger exists for this).
+    await supabase
+      .from("events")
+      .update({ registrations_count: (event.registrations_count ?? 0) + 1 })
+      .eq("id", id)
+
+    // Notify the organizer. `notifications` uses message/link, not content/action_url.
     if (event.organizer_id && event.organizer_id !== user.id) {
+      const { data: me } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle()
       await supabase.from("notifications").insert({
         user_id: event.organizer_id,
         type: "event_registration",
         title: "New Event Attendee!",
-        content: `${user.user_metadata?.full_name || 'Someone'} has registered for your event: ${event.title}`,
-        action_url: `/events/${id}`,
-        metadata: { eventId: id, userId: user.id }
+        message: `${me?.display_name || "Someone"} registered for your event: ${event.title}`,
+        link: `/events/${id}`,
+        metadata: { eventId: id, userId: user.id },
       })
     }
 
@@ -82,10 +93,28 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { data: existing } = await supabase
+      .from("event_registrations")
+      .select("id")
+      .eq("event_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle()
+
     const { error } = await supabase.from("event_registrations").delete().eq("event_id", id).eq("user_id", user.id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Decrement the denormalized count when a registration actually existed.
+    if (existing) {
+      const { data: event } = await supabase
+        .from("events")
+        .select("registrations_count")
+        .eq("id", id)
+        .single()
+      const next = Math.max(0, (event?.registrations_count ?? 1) - 1)
+      await supabase.from("events").update({ registrations_count: next }).eq("id", id)
     }
 
     return NextResponse.json({ success: true })

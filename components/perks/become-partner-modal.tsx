@@ -12,7 +12,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { PartnerForm } from "./partner-form"
 
-export function BecomePartnerModal({ children }: { children?: React.ReactNode }) {
+export function BecomePartnerModal({
+  children,
+  onSubmitted,
+}: {
+  children?: React.ReactNode
+  onSubmitted?: () => void
+}) {
   const [open, setOpen] = React.useState(false)
 
   return (
@@ -28,7 +34,12 @@ export function BecomePartnerModal({ children }: { children?: React.ReactNode })
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <PartnerForm onSuccess={() => setOpen(false)} />
+          <PartnerForm
+            onSuccess={() => {
+              setOpen(false)
+              onSubmitted?.()
+            }}
+          />
         </div>
       </DialogContent>
     </Dialog>

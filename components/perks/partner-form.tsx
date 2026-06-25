@@ -53,13 +53,42 @@ export function PartnerForm({ onSuccess }: { onSuccess?: () => void }) {
     },
   })
 
-  function onSubmit(values: z.infer<typeof partnerFormSchema>) {
-    console.log(values)
-    toast({
-      title: "Application Submitted",
-      description: "Thank you for applying to be a partner. We will get back to you soon.",
-    })
-    if (onSuccess) onSuccess()
+  async function onSubmit(values: z.infer<typeof partnerFormSchema>) {
+    try {
+      const res = await fetch("/api/perks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          business: values.businessName,
+          description: values.natureOfBusiness,
+          category: "Services",
+          // location/contact details are captured in the description for now,
+          // since the perks table doesn't store them separately.
+          discount: "Contact partner for offer",
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast({
+          title: "Couldn't submit application",
+          description: data.error || "Please try again.",
+          variant: "destructive",
+        })
+        return
+      }
+      toast({
+        title: "Application Submitted",
+        description: "Thanks! Your business will appear once an admin verifies it.",
+      })
+      form.reset()
+      if (onSuccess) onSuccess()
+    } catch {
+      toast({
+        title: "Error",
+        description: "Network error while submitting your application.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (

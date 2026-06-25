@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
         user_id: club.created_by,
         type: "club_join",
         title: "New Club Member!",
-        content: `${user?.user_metadata?.full_name || 'Someone'} has joined your club: ${club.name}`,
-        action_url: `/clubs/${clubId}`,
+        message: `${user?.user_metadata?.full_name || 'Someone'} has joined your club: ${club.name}`,
+        link: `/clubs/${clubId}`,
         metadata: { clubId, userId }
       })
     }
