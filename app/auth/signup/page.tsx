@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
@@ -46,7 +46,7 @@ const campuses = [
 const currentYear = new Date().getFullYear()
 const years = Array.from({ length: 30 }, (_, i) => currentYear - i)
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") || "/dashboard"
@@ -352,5 +352,21 @@ export default function SignUpPage() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// useSearchParams() must sit under a Suspense boundary, otherwise a statically
+// prerendered page throws a CSR-bailout error in production.
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-muted/30">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <SignUpForm />
+    </Suspense>
   )
 }

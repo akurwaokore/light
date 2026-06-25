@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import type React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
@@ -14,7 +14,7 @@ import { Mail, Lock, Loader2, AlertCircle } from "lucide-react"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") || "/dashboard"
@@ -269,5 +269,22 @@ export default function SignInPage() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// useSearchParams() must sit under a Suspense boundary, otherwise a statically
+// prerendered page throws a CSR-bailout error in production (shown to users as
+// the generic error page). The Suspense wrapper fixes that.
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-muted/30">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <SignInForm />
+    </Suspense>
   )
 }

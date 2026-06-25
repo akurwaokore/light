@@ -65,7 +65,8 @@
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select user_id, friend_id, status from friendships limit 1;\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select user_id, friend_id from friendships where status='accepted' limit 1;\")",
       "Bash(pkill -f \"next start\")",
-      "Bash(pkill -f \"next-server\")"
+      "Bash(pkill -f \"next-server\")",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }
