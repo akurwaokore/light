@@ -20,10 +20,10 @@ export async function GET(request: Request) {
           location,
           logo_url,
           employment_type,
-          currency,
           salary_min,
           salary_max,
-          description
+          description,
+          posted_by
         )
       `)
       .eq("user_id", user.id)

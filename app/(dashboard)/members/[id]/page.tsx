@@ -22,7 +22,8 @@ import {
   LayoutGrid,
   FileText,
   PlayCircle,
-  ImageIcon
+  ImageIcon,
+  Users
 } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
@@ -39,6 +40,8 @@ export default function MemberProfilePage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [activity, setActivity] = useState<{ posts: any[], media: any[] }>({ posts: [], media: [] })
   const [loadingActivity, setLoadingActivity] = useState(false)
+  const [friendsData, setFriendsData] = useState<{ visible: boolean, friends: any[], count: number } | null>(null)
+  const [loadingFriends, setLoadingFriends] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -54,6 +57,7 @@ export default function MemberProfilePage() {
         setProfile(data)
         if (!data.is_restricted) {
             fetchActivity()
+            fetchFriends()
         }
       } else {
         toast({
@@ -107,6 +111,20 @@ export default function MemberProfilePage() {
       console.error(err)
     } finally {
       setLoadingActivity(false)
+    }
+  }
+
+  const fetchFriends = async () => {
+    setLoadingFriends(true)
+    try {
+      const res = await fetch(`/api/profile/${params.id}/friends`)
+      if (res.ok) {
+        setFriendsData(await res.json())
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingFriends(false)
     }
   }
 
@@ -243,7 +261,7 @@ export default function MemberProfilePage() {
             </div>
           ) : (
             <Tabs defaultValue="about" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-8">
+              <TabsList className="grid w-full grid-cols-4 mb-8">
                 <TabsTrigger value="about" className="gap-2">
                   <UserPlus className="h-4 w-4" /> About
                 </TabsTrigger>
@@ -252,6 +270,9 @@ export default function MemberProfilePage() {
                 </TabsTrigger>
                 <TabsTrigger value="media" className="gap-2">
                   <LayoutGrid className="h-4 w-4" /> Gallery
+                </TabsTrigger>
+                <TabsTrigger value="friends" className="gap-2">
+                  <Users className="h-4 w-4" /> Friends
                 </TabsTrigger>
               </TabsList>
 
@@ -377,6 +398,51 @@ export default function MemberProfilePage() {
                       </div>
                     ))}
                   </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="friends">
+                {loadingFriends ? (
+                  <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/50" /></div>
+                ) : !friendsData?.visible ? (
+                  <div className="py-20 text-center space-y-3">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                      <Lock className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground max-w-sm mx-auto">
+                      {profile.display_name} keeps their friends list private.
+                    </p>
+                  </div>
+                ) : friendsData.friends.length === 0 ? (
+                  <div className="text-center py-20 text-muted-foreground">No friends to show yet.</div>
+                ) : (
+                  <>
+                    <p className="mb-4 text-sm font-semibold text-muted-foreground">
+                      {friendsData.count} {friendsData.count === 1 ? "friend" : "friends"}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {friendsData.friends.map((f) => (
+                        <Link
+                          key={f.id}
+                          href={`/members/${f.id}`}
+                          className="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/40"
+                        >
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={f.photo_url || "/placeholder.svg"} alt={f.display_name} />
+                            <AvatarFallback>
+                              {f.display_name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">{f.display_name}</p>
+                            {(f.job_title || f.campus) && (
+                              <p className="truncate text-xs text-muted-foreground">{f.job_title || f.campus}</p>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </>
                 )}
               </TabsContent>
             </Tabs>

@@ -72,10 +72,18 @@ export async function POST(request: NextRequest) {
       ? soft_skills
       : []
 
+    // user_name / user_email are NOT NULL in the DB. Fall back to the uploader's
+    // profile + auth email so an upload never fails on a missing name/email.
+    const { data: uploaderProfile } = await supabase
+      .from("profiles")
+      .select("display_name, full_name, email")
+      .eq("id", user.id)
+      .maybeSingle()
+
     const payload = {
       user_id: user.id,
-      user_name: fullName || null,
-      user_email: email || null,
+      user_name: fullName || uploaderProfile?.full_name || uploaderProfile?.display_name || user.email || "Alumnus",
+      user_email: email || uploaderProfile?.email || user.email || "",
       file_url: publicUrl,
       storage_path: filePath,
       file_name: safeFileName,

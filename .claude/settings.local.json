@@ -97,7 +97,16 @@
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select title, message, type, read, link, action_url from notifications order by created_at desc limit 5;\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select slug, title from cms_pages order by slug;\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select \\(select count\\(*\\) from profiles\\) members, \\(select count\\(*\\) from profiles where status='active'\\) active, \\(select count\\(*\\) from event_registrations\\) rsvps, \\(select coalesce\\(sum\\(amount\\),0\\) from donations where lower\\(status\\) in \\('completed','succeeded','paid','success'\\)\\) donations, \\(select count\\(*\\) from posts\\) posts, \\(select count\\(*\\) from products\\) products, \\(select count\\(*\\) from jobs\\) jobs, \\(select count\\(*\\) from clubs\\) clubs;\")",
-      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select constraint_name from information_schema.table_constraints where table_name='clubs' and constraint_type='FOREIGN KEY';\")"
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select constraint_name from information_schema.table_constraints where table_name='clubs' and constraint_type='FOREIGN KEY';\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select policyname, cmd, qual, with_check from pg_policies where tablename='friendships' and cmd in \\('UPDATE','ALL'\\);\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"select status, count\\(*\\) c from friendships group by status;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs scratch_schema.sql)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name IN \\('comments','post_comments','saved_posts','post_shares','post_reactions','comment_reactions','friendships'\\) ORDER BY table_name, ordinal_position;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' ORDER BY ordinal_position;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='posts' ORDER BY ordinal_position;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT count\\(*\\) AS n, count\\(parent_id\\) AS with_parent FROM comments;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT to_regclass\\('public.saved_posts'\\) AS saved_posts, to_regclass\\('public.comment_reactions'\\) AS comment_reactions;\")",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT extname FROM pg_extension WHERE extname='ltree';\")"
     ]
   }
 }

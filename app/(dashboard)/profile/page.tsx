@@ -37,6 +37,7 @@ import {
   Infinity,
   X,
   UserCheck,
+  Users,
   ShoppingBag
 } from "lucide-react"
 import Link from "next/link"
@@ -55,6 +56,7 @@ const profileSchema = z.object({
   graduationYear: z.string().min(1, "Please add the required info").nullable().or(z.literal("")),
   campus: z.string().min(1, "Please add the required info").nullable().or(z.literal("")),
   openToWork: z.boolean().optional(),
+  friendsVisibility: z.enum(["public", "friends", "private"]).optional(),
 })
 
 type ProfileForm = z.infer<typeof profileSchema>
@@ -124,6 +126,7 @@ export default function ProfilePage() {
           graduationYear: profileData.graduation_year?.toString() || "",
           campus: profileData.campus || "",
           openToWork: !!profileData.open_to_work,
+          friendsVisibility: profileData.friends_visibility || "friends",
         })
       }
       
@@ -158,12 +161,13 @@ export default function ProfilePage() {
           status: data.status || null,
           graduationYear: data.graduationYear ? parseInt(data.graduationYear.toString()) : null,
           campus: data.campus || null,
-          openToWork: !!data.openToWork
+          openToWork: !!data.openToWork,
+          friends_visibility: data.friendsVisibility || "friends"
         })
       })
 
       if (response.ok) {
-        setProfile({ ...profile, ...data, open_to_work: data.openToWork })
+        setProfile({ ...profile, ...data, open_to_work: data.openToWork, friends_visibility: data.friendsVisibility })
         setIsSaved(true)
         setTimeout(() => setIsSaved(false), 3000)
       } else {
@@ -549,6 +553,31 @@ export default function ProfilePage() {
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${watch("openToWork") ? 'translate-x-6' : 'translate-x-1'}`} />
                     </div>
                   </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <Label className="font-[Alegreya] flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    Who can see my friends list
+                  </Label>
+                  <Select
+                    defaultValue={profile.friends_visibility || "friends"}
+                    onValueChange={(value: "public" | "friends" | "private") => setValue("friendsVisibility", value)}
+                  >
+                    <SelectTrigger className="md:max-w-sm">
+                      <SelectValue placeholder="Select who can see your friends" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Everyone (Public)</SelectItem>
+                      <SelectItem value="friends">Friends only</SelectItem>
+                      <SelectItem value="private">Only me (Private)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Controls whether other alumni can browse your friends from your profile.
+                  </p>
                 </div>
               </CardContent>
             </Card>

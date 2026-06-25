@@ -32,9 +32,12 @@ export async function GET(request: NextRequest) {
       counts[m.club_id] = (counts[m.club_id] || 0) + 1
     }
 
+    // Always use the REAL count from club_memberships. (The clubs.member_count
+    // column held seeded/dummy values like 405 — never fall back to it.)
     const clubsWithCounts = (clubs || []).map((club) => ({
       ...club,
-      members_count: counts[club.id] || club.member_count || 0,
+      members_count: counts[club.id] || 0,
+      member_count: counts[club.id] || 0,
     }))
 
     let userMemberships: string[] = []

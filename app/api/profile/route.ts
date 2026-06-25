@@ -143,6 +143,13 @@ export async function PUT(request: Request) {
     if (body.open_to_work !== undefined) updateData.open_to_work = body.open_to_work
     if (body.openToWork !== undefined) updateData.open_to_work = body.openToWork
 
+    if (
+      body.friends_visibility !== undefined &&
+      ["public", "friends", "private"].includes(body.friends_visibility)
+    ) {
+      updateData.friends_visibility = body.friends_visibility
+    }
+
     console.log("[Profile API] Update payload:", updateData)
 
     // Update profile

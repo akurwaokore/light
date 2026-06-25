@@ -1,54 +1,58 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
-// GET - Get all comments for a post (with nested replies)
+// Shape comment reactions into counts + the current user's reaction.
+function withReactionAggregates(comments: any[], userId: string) {
+  return (comments || []).map((c: any) => {
+    const reactions_by_type: Record<string, number> = {}
+    ;(c.reactions || []).forEach((r: any) => {
+      reactions_by_type[r.reaction_type] = (reactions_by_type[r.reaction_type] || 0) + 1
+    })
+    const { reactions, ...rest } = c
+    return {
+      ...rest,
+      reactions_count: reactions?.length || 0,
+      reactions_by_type,
+      user_reaction: userId ? reactions?.find((r: any) => r.user_id === userId)?.reaction_type || null : null,
+    }
+  })
+}
+
+// GET - All comments for a post (flat list; client builds the reply threads
+// from parent_comment_id). Ordered oldest-first, Facebook-style.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const supabase = await createServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    // Get all comments for this post
-    // Note: parent_comment_id is checked in the SQL script but we handle it gracefully here
     const { data: comments, error } = await supabase
       .from("comments")
       .select(`
         id,
         content,
+        image_url,
+        media_urls,
         created_at,
         parent_comment_id,
-        path,
-        author:profiles!comments_author_id_fkey(id, display_name, photo_url, campus)
+        author:profiles!comments_author_id_fkey(id, display_name, photo_url, campus),
+        reactions:comment_reactions(reaction_type, user_id)
       `)
       .eq("post_id", id)
-      .order("path", { ascending: true }) // Order by path for threaded view
+      .order("created_at", { ascending: true })
 
     if (error) throw error
 
-    // Get user from session
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Transform to include reaction counts
-    const transformedComments =
-      comments?.map((comment: any) => ({
-        ...comment,
-        reactions_count: comment.reactions?.length || 0,
-        reactions_by_type: comment.reactions?.reduce((acc: any, r: any) => {
-          acc[r.reaction_type] = (acc[r.reaction_type] || 0) + 1
-          return acc
-        }, {}),
-        user_reaction:
-          comment.reactions?.find((r: any) => r.user_id === (user?.id || ""))?.reaction_type ||
-          null,
-      })) || []
-
-    return NextResponse.json({ comments: transformedComments })
+    return NextResponse.json({ comments: withReactionAggregates(comments || [], user?.id || "") })
   } catch (error: any) {
     console.error("Error fetching comments:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
-// POST - Add comment or reply to post
+// POST - Add a comment or reply. A comment may be text, an image, or both.
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
@@ -61,46 +65,39 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { content, parent_comment_id } = await request.json()
+    const { content, parent_comment_id, image_url, media_urls } = await request.json()
 
-    if (!content || !content.trim()) {
+    const trimmed = (content || "").trim()
+    const hasMedia = !!image_url || (Array.isArray(media_urls) && media_urls.length > 0)
+    if (!trimmed && !hasMedia) {
       return NextResponse.json({ error: "Comment cannot be empty" }, { status: 400 })
     }
 
-    let path = user.id; // Default path for top-level comments
+    // Validate the parent (if replying) belongs to the same post.
     if (parent_comment_id) {
-      // Fetch parent comment's path to build the new path
-      const { data: parentComment, error: parentError } = await supabase
+      const { data: parent, error: parentError } = await supabase
         .from("comments")
-        .select("path")
+        .select("id, post_id")
         .eq("id", parent_comment_id)
-        .single();
-
-      if (parentError || !parentComment) {
-        console.error("Error fetching parent comment for reply:", parentError?.message || "Parent comment not found");
-        return NextResponse.json({ error: "Parent comment not found for reply" }, { status: 404 });
+        .maybeSingle()
+      if (parentError || !parent || parent.post_id !== id) {
+        return NextResponse.json({ error: "Parent comment not found for reply" }, { status: 404 })
       }
-      path = `${parentComment.path}.${user.id}`; // Append current user's ID to parent path
     }
 
     const commentData: any = {
       post_id: id,
       author_id: user.id,
-      content: content.trim(),
+      content: trimmed,
       parent_comment_id: parent_comment_id || null,
-      path: path,
+      image_url: image_url || null,
+      media_urls: Array.isArray(media_urls) ? media_urls : [],
     }
 
     const { data: comment, error } = await supabase
       .from("comments")
       .insert(commentData)
-      .select(`
-        id,
-        content,
-        created_at,
-        parent_comment_id,
-        path
-      `)
+      .select(`id, content, image_url, media_urls, created_at, parent_comment_id`)
       .single()
 
     if (error) {
@@ -108,49 +105,55 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       throw error
     }
 
-    // Add author info manually to avoid join issues in response
-    const { data: authorProfile } = await supabase.from("profiles").select("id, display_name, photo_url, campus").eq("id", user.id).single()
-    const commentWithAuthor = { ...comment, author: authorProfile }
+    // Attach author manually to avoid join hiccups in the insert response.
+    const { data: authorProfile } = await supabase
+      .from("profiles")
+      .select("id, display_name, photo_url, campus")
+      .eq("id", user.id)
+      .single()
+    const commentWithAuthor = {
+      ...comment,
+      author: authorProfile,
+      reactions_count: 0,
+      reactions_by_type: {},
+      user_reaction: null,
+    }
 
-    // Get post author to notify
+    // Notify the post author (unless commenting on own post).
     const { data: post } = await supabase.from("posts").select("author_id, content").eq("id", id).single()
-
     if (post && post.author_id !== user.id) {
-      const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single()
-
       await supabase.from("notifications").insert({
         user_id: post.author_id,
         type: "post_comment",
         title: "New Comment",
-        message: `${profile?.display_name || "Someone"} commented on your post: "${post.content?.substring(0, 30)}..."`,
+        message: `${authorProfile?.display_name || "Someone"} commented on your post: "${post.content?.substring(0, 30)}..."`,
+        link: `/feed`,
         action_url: `/feed`,
         metadata: { post_id: id, comment_id: comment.id },
       })
     }
 
-    // If it's a reply, notify the parent comment author
+    // If it's a reply, notify the parent comment author too (once).
     if (parent_comment_id) {
       const { data: parentComment } = await supabase
         .from("comments")
         .select("author_id, content")
         .eq("id", parent_comment_id)
         .single()
-
       if (parentComment && parentComment.author_id !== user.id && parentComment.author_id !== post?.author_id) {
-        const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single()
-
         await supabase.from("notifications").insert({
           user_id: parentComment.author_id,
           type: "comment_reply",
           title: "New Reply",
-          message: `${profile?.display_name || "Someone"} replied to your comment: "${parentComment.content?.substring(0, 30)}..."`,
+          message: `${authorProfile?.display_name || "Someone"} replied to your comment: "${parentComment.content?.substring(0, 30)}..."`,
+          link: `/feed`,
           action_url: `/feed`,
           metadata: { post_id: id, comment_id: comment.id, parent_comment_id },
         })
       }
     }
 
-    // Award 0.2 points for commenting
+    // Award 0.2 points for commenting (best-effort).
     try {
       const origin = request.nextUrl.origin
       fetch(`${origin}/api/points/award`, {
@@ -164,9 +167,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           referenceType: "comment",
           referenceId: comment.id,
         }),
-      }).catch(e => console.error("[akurwas] Points award background error:", e))
+      }).catch((e) => console.error("[points] comment award error:", e))
     } catch (pointsError) {
-      console.error("[akurwas] Error awarding comment points:", pointsError)
+      console.error("[points] Error awarding comment points:", pointsError)
     }
 
     return NextResponse.json({ comment: commentWithAuthor, message: "Comment added successfully" })
@@ -176,7 +179,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-// DELETE - Remove user's own comment from a post
+// DELETE - Remove the user's own comment (cascade removes its replies/reactions).
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params

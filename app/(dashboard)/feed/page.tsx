@@ -5,52 +5,29 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { 
-  Heart, 
-  MessageCircle, 
-  Image as ImageIcon, 
+import {
+  MessageCircle,
+  Image as ImageIcon,
   Video as VideoIcon,
-  Send, 
-  MoreHorizontal, 
-  Share2, 
-  Bookmark, 
-  Loader2, 
-  Smile,
+  Send,
+  MoreHorizontal,
+  Share2,
+  Bookmark,
+  Loader2,
   Globe,
   Users,
   Lock as LockIcon,
-  Plus,
-  Play,
   Edit2,
   Trash2,
   ThumbsUp,
-  Laugh,
-  Frown,
-  Sparkles
+  X,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabaseBrowser } from "@/lib/supabaseBrowser"
 import { RichContent } from "@/components/feed/rich-content"
-
-const REACTION_ICONS: Record<string, any> = {
-  like: ThumbsUp,
-  love: Heart,
-  haha: Laugh,
-  wow: Sparkles,
-  sad: Frown,
-  angry: Frown,
-}
-
-const REACTION_COLORS: Record<string, string> = {
-  like: "text-blue-500",
-  love: "text-red-500",
-  haha: "text-yellow-500",
-  wow: "text-purple-500",
-  sad: "text-gray-500",
-  angry: "text-orange-500",
-}
+import { EmojiPicker } from "@/components/feed/emoji-picker"
+import { CommentComposer } from "@/components/feed/comment-composer"
+import { SharedPostCard } from "@/components/feed/shared-post-card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,253 +39,654 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-function CommentInput({ 
-  postId, 
-  profile, 
-  onCommentAdded, 
-  parentCommentId, 
-  autoFocus = false,
-  onCancel
-}: { 
-  postId: string, 
-  profile: any, 
-  onCommentAdded: (comment?: any) => void,
-  parentCommentId?: string,
-  autoFocus?: boolean,
-  onCancel?: () => void
-}) {
-  const [content, setContent] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
+// Facebook-style reaction set (emoji + colour).
+const REACTIONS: { type: string; emoji: string; label: string; color: string }[] = [
+  { type: "like", emoji: "👍", label: "Like", color: "text-blue-600" },
+  { type: "love", emoji: "❤️", label: "Love", color: "text-red-500" },
+  { type: "haha", emoji: "😆", label: "Haha", color: "text-yellow-500" },
+  { type: "wow", emoji: "😮", label: "Wow", color: "text-yellow-500" },
+  { type: "sad", emoji: "😢", label: "Sad", color: "text-yellow-500" },
+  { type: "angry", emoji: "😡", label: "Angry", color: "text-orange-600" },
+]
+const REACTION_MAP = Object.fromEntries(REACTIONS.map((r) => [r.type, r]))
 
-  const handleSubmit = async () => {
-    if (!content.trim() || isSubmitting) return
-    setIsSubmitting(true)
+function formatTimeAgo(dateString: string) {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+  if (diffInMinutes < 1) return "Just now"
+  if (diffInMinutes < 60) return `${diffInMinutes}m`
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) return `${diffInHours}h`
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays < 7) return `${diffInDays}d`
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
+
+function MediaGrid({ urls }: { urls: string[] }) {
+  if (!urls || urls.length === 0) return null
+  return (
+    <div className={cn("grid gap-1", urls.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
+      {urls.map((url, i) => {
+        const isVideo = /\.(mp4|webm|mov)$/i.test(url)
+        return (
+          <div key={i} className="relative aspect-video overflow-hidden bg-muted">
+            {isVideo ? (
+              <video src={url} controls className="h-full w-full object-cover" />
+            ) : (
+              <img src={url} alt={`Media ${i + 1}`} className="h-full w-full object-cover" />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// A single comment (with optional image, reactions, and one level of replies).
+function CommentItem({
+  comment,
+  replies,
+  postId,
+  profile,
+  onReplyAdded,
+  onDeleted,
+}: {
+  comment: any
+  replies: any[]
+  postId: string
+  profile: any
+  onReplyAdded: (reply: any) => void
+  onDeleted: (commentId: string) => void
+}) {
+  const [isReplying, setIsReplying] = useState(false)
+  const [reaction, setReaction] = useState<string | null>(comment.user_reaction || null)
+  const [reactionCount, setReactionCount] = useState<number>(comment.reactions_count || 0)
+  const [showReactions, setShowReactions] = useState(false)
+  const isReply = !!comment.parent_comment_id
+
+  const react = async (type: string) => {
+    setShowReactions(false)
+    const wasActive = reaction === type
+    // Optimistic update
+    setReactionCount((c) => (wasActive ? Math.max(0, c - 1) : reaction ? c : c + 1))
+    setReaction(wasActive ? null : type)
     try {
-      const res = await fetch(`/api/posts/${postId}/comments`, {
+      await fetch(`/api/posts/${postId}/comments/${comment.id}/react`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ 
-          content: content.trim(),
-          parent_comment_id: parentCommentId 
-        }),
+        body: JSON.stringify({ reaction_type: type }),
       })
-      
-      const data = await res.json().catch(() => ({}));
-      
-      if (res.ok) {
-        setContent("")
-        onCommentAdded(data.comment)
-        toast({ title: parentCommentId ? "Reply posted!" : "Comment posted!" })
-        if (onCancel) onCancel()
-      } else {
-        toast({ 
-          title: "Failed to post", 
-          description: data.error || "Unknown error",
-          variant: "destructive" 
-        })
-      }
-    } catch (err) {
-      toast({ title: "Error", description: "Network error while posting", variant: "destructive" })
-    } finally {
-      setIsSubmitting(false)
+    } catch {
+      /* best-effort; counts re-sync on next load */
     }
   }
 
+  const current = reaction ? REACTION_MAP[reaction] : null
+
   return (
-    <div className={cn(
-      "px-4 py-2 flex items-center gap-2",
-      !parentCommentId && "border-t border-border/40"
-    )}>
-      <Avatar className="h-6 w-6">
-        <AvatarImage src={profile?.photo_url || "/placeholder.svg"} />
-        <AvatarFallback className="text-[10px]">
-          {profile?.display_name?.[0] || "U"}
-        </AvatarFallback>
+    <div className={cn("flex gap-2", isReply && "ml-9")}>
+      <Avatar className="h-7 w-7 shrink-0">
+        <AvatarImage src={comment.author?.photo_url || "/placeholder.svg"} />
+        <AvatarFallback className="text-[10px]">{comment.author?.display_name?.[0] || "U"}</AvatarFallback>
       </Avatar>
-      <input 
-        autoFocus={autoFocus}
-        placeholder={parentCommentId ? "Write a reply..." : "Add a comment..."} 
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') handleSubmit()
-          if (e.key === 'Escape' && onCancel) onCancel()
-        }}
-        disabled={isSubmitting}
-        className="flex-1 bg-transparent text-xs border-none focus:ring-0 placeholder:text-muted-foreground/60"
-      />
-      <div className="flex items-center gap-2">
-        {onCancel && (
-          <button 
-            onClick={onCancel}
-            className="text-[10px] font-medium text-muted-foreground hover:underline"
-          >
-            Cancel
-          </button>
+      <div className="flex-1">
+        <div className="inline-block max-w-full rounded-2xl bg-muted/70 px-3 py-2">
+          <p className="text-xs font-bold">{comment.author?.display_name || "Anonymous"}</p>
+          {comment.content && (
+            <RichContent text={comment.content} className="whitespace-pre-wrap break-words text-sm" />
+          )}
+        </div>
+        {comment.image_url && (
+          <img
+            src={comment.image_url}
+            alt="Comment attachment"
+            className="mt-1 max-h-72 rounded-xl border object-cover"
+          />
         )}
-        <button 
-          onClick={handleSubmit}
-          disabled={!content.trim() || isSubmitting}
-          className="text-xs font-bold text-primary opacity-50 hover:opacity-100 transition-opacity disabled:opacity-30"
-        >
-          {isSubmitting ? "..." : "Post"}
-        </button>
+
+        {/* Comment meta row: react / reply / count / delete */}
+        <div className="mt-0.5 flex items-center gap-3 px-3 text-[11px] font-semibold text-muted-foreground">
+          <span>{formatTimeAgo(comment.created_at)}</span>
+          <div
+            className="relative"
+            onMouseEnter={() => setShowReactions(true)}
+            onMouseLeave={() => setShowReactions(false)}
+          >
+            <button
+              type="button"
+              onClick={() => react(reaction || "like")}
+              className={cn("hover:underline", current && current.color)}
+            >
+              {current ? current.label : "Like"}
+            </button>
+            {showReactions && (
+              <div className="absolute bottom-full left-0 z-20 mb-1 flex gap-0.5 rounded-full border bg-background p-1 shadow-lg">
+                {REACTIONS.map((r) => (
+                  <button
+                    key={r.type}
+                    type="button"
+                    onClick={() => react(r.type)}
+                    title={r.label}
+                    className="text-lg transition-transform hover:scale-125"
+                  >
+                    {r.emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {!isReply && (
+            <button type="button" onClick={() => setIsReplying((v) => !v)} className="hover:underline">
+              Reply
+            </button>
+          )}
+          {reactionCount > 0 && (
+            <span className="flex items-center gap-0.5 font-normal">
+              {current?.emoji || "👍"} {reactionCount}
+            </span>
+          )}
+          {profile?.id && comment.author?.id === profile.id && (
+            <button
+              type="button"
+              onClick={() => onDeleted(comment.id)}
+              className="text-destructive hover:underline"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+
+        {/* Replies */}
+        {replies.length > 0 && (
+          <div className="mt-2 space-y-2">
+            {replies.map((r) => (
+              <CommentItem
+                key={r.id}
+                comment={r}
+                replies={[]}
+                postId={postId}
+                profile={profile}
+                onReplyAdded={onReplyAdded}
+                onDeleted={onDeleted}
+              />
+            ))}
+          </div>
+        )}
+
+        {isReplying && (
+          <CommentComposer
+            postId={postId}
+            profile={profile}
+            parentCommentId={comment.id}
+            autoFocus
+            onCommentAdded={(reply) => {
+              if (reply) onReplyAdded(reply)
+              setIsReplying(false)
+            }}
+            onCancel={() => setIsReplying(false)}
+          />
+        )}
       </div>
     </div>
   )
 }
 
-function ShareDialog({ postId, onShared }: { postId: string, onShared: () => void }) {
-  const [isOpen, setIsOpen] = useState(false)
+// Comments area for a post: preview collapsed, loads full thread (with reactions)
+// from the dedicated endpoint when expanded.
+function CommentsSection({
+  post,
+  profile,
+  onCountChange,
+}: {
+  post: any
+  profile: any
+  onCountChange: (delta: number) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [comments, setComments] = useState<any[]>(post.recent_comments || [])
+  const [loaded, setLoaded] = useState(false)
+  const { toast } = useToast()
+
+  const loadFull = async () => {
+    try {
+      const res = await fetch(`/api/posts/${post.id}/comments`, { credentials: "include" })
+      if (res.ok) {
+        const data = await res.json()
+        setComments(data.comments || [])
+        setLoaded(true)
+      }
+    } catch {
+      /* keep preview */
+    }
+  }
+
+  const expand = () => {
+    setExpanded(true)
+    if (!loaded) loadFull()
+  }
+
+  const addComment = (comment?: any) => {
+    if (!comment) return
+    setComments((prev) => [...prev, comment])
+    onCountChange(1)
+    setExpanded(true)
+  }
+
+  const deleteComment = async (commentId: string) => {
+    try {
+      const res = await fetch(`/api/posts/${post.id}/comments`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ commentId }),
+      })
+      if (res.ok) {
+        // Remove the comment and any of its replies.
+        setComments((prev) => prev.filter((c) => c.id !== commentId && c.parent_comment_id !== commentId))
+        onCountChange(-1)
+      } else {
+        const d = await res.json().catch(() => ({}))
+        toast({ title: "Failed to delete", description: d.error || "", variant: "destructive" })
+      }
+    } catch {
+      toast({ title: "Error", description: "Network error", variant: "destructive" })
+    }
+  }
+
+  const topLevel = comments.filter((c) => !c.parent_comment_id)
+  const repliesByParent: Record<string, any[]> = {}
+  comments.forEach((c) => {
+    if (c.parent_comment_id) {
+      ;(repliesByParent[c.parent_comment_id] = repliesByParent[c.parent_comment_id] || []).push(c)
+    }
+  })
+
+  const totalCount = Math.max(post.comments_count || 0, comments.length)
+  const visible = expanded ? topLevel : topLevel.slice(-1)
+
+  return (
+    <div className="space-y-3 px-3 pb-3 pt-1">
+      {totalCount > visible.length && !expanded && (
+        <button
+          type="button"
+          onClick={expand}
+          className="text-xs font-semibold text-muted-foreground hover:underline"
+        >
+          View {totalCount > 1 ? `all ${totalCount} comments` : "comment"}
+        </button>
+      )}
+
+      {visible.map((comment) => (
+        <CommentItem
+          key={comment.id}
+          comment={comment}
+          replies={repliesByParent[comment.id] || []}
+          postId={post.id}
+          profile={profile}
+          onReplyAdded={(reply) => {
+            setComments((prev) => [...prev, reply])
+            onCountChange(1)
+          }}
+          onDeleted={deleteComment}
+        />
+      ))}
+
+      <CommentComposer postId={post.id} profile={profile} onCommentAdded={addComment} />
+    </div>
+  )
+}
+
+function PostCard({
+  post: initialPost,
+  profile,
+  onChanged,
+  onShared,
+}: {
+  post: any
+  profile: any
+  onChanged: () => void
+  onShared: () => void
+}) {
+  const [post, setPost] = useState(initialPost)
+  const [showReactions, setShowReactions] = useState(false)
+  const [showComments, setShowComments] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(post.content || "")
+  const [shareOpen, setShareOpen] = useState(false)
   const [shareText, setShareText] = useState("")
   const [isSharing, setIsSharing] = useState(false)
+  const { toast } = useToast()
 
-  const handleShare = async () => {
+  useEffect(() => setPost(initialPost), [initialPost])
+
+  const isOwner = profile?.id && post.author?.id === profile.id
+  const canModerate = isOwner || profile?.role === "admin"
+  const current = post.user_reaction ? REACTION_MAP[post.user_reaction] : null
+
+  const react = async (type: string) => {
+    setShowReactions(false)
+    const wasActive = post.user_reaction === type
+    const newType = wasActive ? null : type
+    const delta = wasActive ? -1 : post.user_reaction ? 0 : 1
+    setPost((p: any) => ({
+      ...p,
+      user_reaction: newType,
+      reactions_count: Math.max(0, (p.reactions_count || 0) + delta),
+    }))
+    try {
+      await fetch(`/api/posts/${post.id}/react`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reaction_type: type }),
+      })
+    } catch {
+      /* best-effort */
+    }
+  }
+
+  const toggleSave = async () => {
+    try {
+      const res = await fetch(`/api/posts/${post.id}/save`, { method: "POST", credentials: "include" })
+      if (res.ok) {
+        const data = await res.json()
+        setPost((p: any) => ({ ...p, user_saved: data.saved }))
+        toast({ title: data.saved ? "Saved to bookmarks" : "Removed from bookmarks" })
+        onChanged()
+      }
+    } catch {
+      toast({ title: "Error", description: "Could not update bookmark", variant: "destructive" })
+    }
+  }
+
+  const saveEdit = async () => {
+    if (!editContent.trim()) return
+    try {
+      const res = await fetch(`/api/posts/${post.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ content: editContent }),
+      })
+      if (res.ok) {
+        setPost((p: any) => ({ ...p, content: editContent }))
+        setIsEditing(false)
+        toast({ title: "Post updated" })
+      }
+    } catch {
+      toast({ title: "Error", description: "Could not update post", variant: "destructive" })
+    }
+  }
+
+  const deletePost = async () => {
+    if (!confirm("Delete this post?")) return
+    try {
+      const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE", credentials: "include" })
+      if (res.ok) {
+        toast({ title: "Post deleted" })
+        onChanged()
+      }
+    } catch {
+      toast({ title: "Error", description: "Could not delete post", variant: "destructive" })
+    }
+  }
+
+  const submitShare = async () => {
     if (isSharing) return
     setIsSharing(true)
     try {
-      const res = await fetch(`/api/posts/${postId}/share`, {
+      const res = await fetch(`/api/posts/${post.id}/share`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ share_text: shareText.trim() }),
       })
       if (res.ok) {
-        setIsOpen(false)
+        setShareOpen(false)
         setShareText("")
+        toast({ title: "Post shared!" })
         onShared()
+      } else {
+        const d = await res.json().catch(() => ({}))
+        toast({ title: "Could not share", description: d.error || "", variant: "destructive" })
       }
-    } catch (err) {
-      console.error("Error sharing post:", err)
     } finally {
       setIsSharing(false)
     }
   }
 
-  return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <button 
-          className="text-muted-foreground transition-colors hover:text-foreground"
-          aria-label="Share post"
-        >
-          <Share2 className="h-6 w-6" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80 p-4 space-y-4">
-        <p className="text-sm font-bold">Share this post</p>
-        <Textarea 
-          placeholder="Say something about this..." 
-          value={shareText}
-          onChange={(e) => setShareText(e.target.value)}
-          className="min-h-[80px]"
-        />
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleShare} disabled={isSharing}>
-            {isSharing ? "Sharing..." : "Share Now"}
-          </Button>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-function CommentItem({ comment, post, profile, onCommentAdded, onCommentDeleted }: any) {
-  const [isReplying, setIsReplying] = useState(false);
-  const isReply = !!comment.parent_comment_id;
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
-
-    if (diffInMinutes < 1) return "Just now"
-    if (diffInMinutes < 60) return `${diffInMinutes}m`
-    const diffInHours = Math.floor(diffInMinutes / 60)
-    if (diffInHours < 24) return `${diffInHours}h`
-    const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 7) return `${diffInDays}d`
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-  }
+  const original = post.shared_post
 
   return (
-    <div 
-      className={cn(
-        "flex gap-3",
-        isReply && "ml-8 border-l-2 border-primary/10 pl-4"
-      )}
-    >
-      <Avatar className="h-8 w-8 shrink-0">
-        <AvatarImage src={comment.author?.photo_url || "/placeholder.svg"} />
-        <AvatarFallback className="text-[10px]">
-          {comment.author?.display_name?.[0] || "U"}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 space-y-1">
-        <div className="rounded-2xl bg-muted/50 px-4 py-2 text-sm shadow-sm ring-1 ring-border/50">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <p className="font-bold text-xs">{comment.author?.display_name}</p>
-              <span className="text-[10px] text-muted-foreground">{formatTimeAgo(comment.created_at)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {!isReply && (
-                <button
-                  onClick={() => setIsReplying(!isReplying)}
-                  className="text-[10px] font-semibold text-primary hover:underline"
-                >
-                  Reply
-                </button>
-              )}
-              {profile?.id && comment.author?.id === profile.id && (
-                <button
-                  onClick={() => onCommentDeleted(post.id, comment.id)}
-                  className="text-[10px] font-semibold text-destructive hover:underline"
-                >
-                  Delete
-                </button>
+    <Card className="overflow-hidden border-none bg-card shadow-sm ring-1 ring-border/60">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-4">
+        <div className="flex items-center gap-3">
+          <Link href={post.author?.id ? `/members/${post.author.id}` : "#"}>
+            <Avatar className="h-10 w-10 ring-1 ring-border">
+              <AvatarImage src={post.author?.photo_url || "/placeholder.svg"} />
+              <AvatarFallback className="bg-primary/5 text-xs font-bold text-primary">
+                {post.author?.display_name?.split(" ").map((n: string) => n[0]).join("") || "U"}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+          <div>
+            <Link
+              href={post.author?.id ? `/members/${post.author.id}` : "#"}
+              className="text-sm font-bold leading-none hover:underline"
+            >
+              {post.author?.display_name || "Anonymous"}
+            </Link>
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span>{formatTimeAgo(post.created_at)}</span>
+              <span>·</span>
+              {post.visibility === "public" ? (
+                <Globe className="h-3 w-3" />
+              ) : post.visibility === "friends" ? (
+                <Users className="h-3 w-3" />
+              ) : (
+                <LockIcon className="h-3 w-3" />
               )}
             </div>
           </div>
-          <p className="mt-0.5 text-xs md:text-sm">{comment.content}</p>
         </div>
-        
-        {isReplying && (
-          <div className="mt-2">
-            <CommentInput
-              postId={post.id}
-              profile={profile}
-              parentCommentId={comment.id}
-              autoFocus
-              onCommentAdded={(reply) => {
-                onCommentAdded(post.id, reply);
-                setIsReplying(false);
-              }}
-              onCancel={() => setIsReplying(false)}
-            />
-          </div>
-        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="More options">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={toggleSave}>
+              <Bookmark className={cn("mr-2 h-4 w-4", post.user_saved && "fill-current text-yellow-500")} />
+              {post.user_saved ? "Remove bookmark" : "Save post"}
+            </DropdownMenuItem>
+            {canModerate && (
+              <>
+                <DropdownMenuSeparator />
+                {isOwner && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setIsEditing(true)
+                      setEditContent(post.content)
+                    }}
+                  >
+                    <Edit2 className="mr-2 h-4 w-4" />
+                    Edit post
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  onClick={deletePost}
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete post
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </div>
-  );
+
+      {/* Body */}
+      {isEditing ? (
+        <div className="space-y-3 px-4 py-3">
+          <Textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="min-h-[90px]" />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={saveEdit}>
+              Save
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {post.content && (
+            <div className="px-4 py-3">
+              <RichContent text={post.content} className="whitespace-pre-wrap text-sm leading-relaxed md:text-[15px]" />
+            </div>
+          )}
+
+          {/* Shared (re-posted) original */}
+          {post.shared_post_id &&
+            (original ? (
+              <div className="px-4 pb-3">
+                <SharedPostCard sharedPost={original} />
+              </div>
+            ) : (
+              <div className="mx-4 mb-3 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                This shared post is no longer available.
+              </div>
+            ))}
+
+          {post.image_url && <img src={post.image_url} alt="Post media" className="max-h-[32rem] w-full object-cover" />}
+          {post.video_url && (
+            <video src={post.video_url} controls preload="metadata" className="max-h-[32rem] w-full bg-black" />
+          )}
+          {Array.isArray(post.media_urls) && post.media_urls.length > 0 && <MediaGrid urls={post.media_urls} />}
+        </>
+      )}
+
+      {/* Counts row */}
+      {(post.reactions_count > 0 || post.comments_count > 0 || post.shares_count > 0) && (
+        <div className="flex items-center justify-between px-4 py-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            {Object.keys(post.reactions_by_type || {}).slice(0, 3).map((t) => (
+              <span key={t}>{REACTION_MAP[t]?.emoji || "👍"}</span>
+            ))}
+            {post.reactions_count > 0 && <span className="ml-1">{post.reactions_count}</span>}
+          </div>
+          <div className="flex gap-3">
+            {post.comments_count > 0 && <span>{post.comments_count} comments</span>}
+            {post.shares_count > 0 && <span>{post.shares_count} shares</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Action bar */}
+      <div className="mx-2 grid grid-cols-3 border-t border-border/60 py-1">
+        <div
+          className="relative"
+          onMouseEnter={() => setShowReactions(true)}
+          onMouseLeave={() => setShowReactions(false)}
+        >
+          <button
+            type="button"
+            onClick={() => react(post.user_reaction || "like")}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-md py-2 text-sm font-semibold transition-colors hover:bg-muted",
+              current ? current.color : "text-muted-foreground",
+            )}
+          >
+            {current ? <span className="text-base">{current.emoji}</span> : <ThumbsUp className="h-5 w-5" />}
+            {current ? current.label : "Like"}
+          </button>
+          {showReactions && (
+            <div className="absolute bottom-full left-1/2 z-20 mb-1 flex -translate-x-1/2 gap-1 rounded-full border bg-background p-1.5 shadow-xl">
+              {REACTIONS.map((r) => (
+                <button
+                  key={r.type}
+                  type="button"
+                  onClick={() => react(r.type)}
+                  title={r.label}
+                  className="text-2xl transition-transform hover:scale-125"
+                >
+                  {r.emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setShowComments((v) => !v)}
+          className="flex items-center justify-center gap-2 rounded-md py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted"
+        >
+          <MessageCircle className="h-5 w-5" />
+          Comment
+        </button>
+
+        <DropdownMenu open={shareOpen} onOpenChange={setShareOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center justify-center gap-2 rounded-md py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <Share2 className="h-5 w-5" />
+              Share
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 space-y-3 p-4">
+            <p className="text-sm font-bold">Share this post</p>
+            <Textarea
+              placeholder="Say something about this…"
+              value={shareText}
+              onChange={(e) => setShareText(e.target.value)}
+              className="min-h-[70px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setShareOpen(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={submitShare} disabled={isSharing}>
+                {isSharing ? "Sharing…" : "Share now"}
+              </Button>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Comments */}
+      {showComments && (
+        <div className="border-t border-border/60 bg-muted/10">
+          <CommentsSection
+            post={post}
+            profile={profile}
+            onCountChange={(delta) =>
+              setPost((p: any) => ({ ...p, comments_count: Math.max(0, (p.comments_count || 0) + delta) }))
+            }
+          />
+        </div>
+      )}
+    </Card>
+  )
 }
 
 export default function FeedPage() {
   const [newPostContent, setNewPostContent] = useState("")
   const [newPostImage, setNewPostImage] = useState<string | null>(null)
   const [newPostVideo, setNewPostVideo] = useState<string | null>(null)
-  const [newPostMedia, setNewPostMedia] = useState<string[]>([])
   const [visibility, setVisibility] = useState<"public" | "friends" | "private">("public")
   const [isPosting, setIsPosting] = useState(false)
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
-  const [isEditing, setIsEditing] = useState<string | null>(null)
-  const [editContent, setEditContent] = useState("")
-  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null)
-  const [view, setView] = useState<'feed' | 'bookmarks'>('feed')
+  const [view, setView] = useState<"feed" | "bookmarks">("feed")
   const [hasNewPosts, setHasNewPosts] = useState(false)
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const { toast } = useToast()
@@ -325,15 +703,12 @@ export default function FeedPage() {
     fetchPosts()
   }, [view])
 
-  // Realtime: surface a "new posts" banner when someone else publishes.
   useEffect(() => {
-    if (view !== 'feed') return
+    if (view !== "feed") return
     const channel = supabaseBrowser
-      .channel('feed-posts')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, (payload: any) => {
-        if (payload?.new?.author_id && payload.new.author_id !== profile?.id) {
-          setHasNewPosts(true)
-        }
+      .channel("feed-posts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "posts" }, (payload: any) => {
+        if (payload?.new?.author_id && payload.new.author_id !== profile?.id) setHasNewPosts(true)
       })
       .subscribe()
     return () => {
@@ -353,20 +728,18 @@ export default function FeedPage() {
   const fetchPosts = async () => {
     setLoading(true)
     try {
-      const endpoint = view === 'bookmarks' ? "/api/posts/saved" : "/api/posts"
-      const response = await fetch(endpoint)
-      if (response.ok) {
-        const data = await response.json()
-        const normalizedPosts = (data.posts || []).map((post: any) => ({
-          ...post,
-          comments_count: Number(post.comments_count || 0),
-          recent_comments: Array.isArray(post.recent_comments) ? post.recent_comments : [],
-        }))
-        setPosts(normalizedPosts)
+      const endpoint = view === "bookmarks" ? "/api/posts/saved" : "/api/posts"
+      const res = await fetch(endpoint, { credentials: "include" })
+      if (res.ok) {
+        const data = await res.json()
+        setPosts(
+          (data.posts || []).map((p: any) => ({
+            ...p,
+            comments_count: Number(p.comments_count || 0),
+            recent_comments: Array.isArray(p.recent_comments) ? p.recent_comments : [],
+          })),
+        )
       } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error("Error fetching posts:", response.status, errorData)
-        // Show empty feed on error instead of hanging
         setPosts([])
       }
     } catch (error) {
@@ -377,251 +750,56 @@ export default function FeedPage() {
     }
   }
 
-  const handleCommentAdded = (postId: string, comment?: any) => {
-    if (!comment) {
-      fetchPosts()
-      return
-    }
-
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id !== postId) return post
-        
-        if (comment.parent_comment_id) {
-          fetchPosts() // Full refresh for correct threading
-          return post
-        }
-
-        const existingComments = Array.isArray(post.recent_comments) ? post.recent_comments : []
-        const safeCount = Number(post.comments_count || 0)
-        return {
-          ...post,
-          comments_count: safeCount + 1,
-          recent_comments: [comment, ...existingComments],
-        }
-      }),
-    )
-  }
-
-  const handleCommentDeleted = async (postId: string, commentId: string) => {
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video") => {
+    const file = e.target.files?.[0]
+    if (!file) return
     try {
-      const res = await fetch(`/api/posts/${postId}/comments`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ commentId }),
-      })
-
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        toast({
-          title: "Failed to delete comment",
-          description: data.error || "Unknown error",
-          variant: "destructive",
-        })
-        return
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("path", "posts")
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      const data = await res.json()
+      if (data.url) {
+        if (type === "image") setNewPostImage(data.url)
+        if (type === "video") setNewPostVideo(data.url)
       }
-
-      setPosts((prev) =>
-        prev.map((post) => {
-          if (post.id !== postId) return post
-          const existingComments = Array.isArray(post.recent_comments) ? post.recent_comments : []
-          const safeCount = Number(post.comments_count || 0)
-          return {
-            ...post,
-            comments_count: Math.max(0, safeCount - 1),
-            recent_comments: existingComments.filter((c: any) => c.id !== commentId),
-          }
-        }),
-      )
-
-      toast({ title: "Comment deleted" })
-    } catch (error) {
-      console.error("Error deleting comment:", error)
-      toast({ title: "Error", description: "Network error while deleting comment", variant: "destructive" })
-    }
-  }
-
-  const handleReaction = async (postId: string, reactionType: string) => {
-    try {
-      const response = await fetch(`/api/posts/${postId}/react`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reaction_type: reactionType }),
-      })
-
-      if (response.ok) {
-        fetchPosts()
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to react to post",
-        variant: "destructive",
-      })
-    }
-    setShowReactionPicker(null)
-  }
-
-  const handleToggleSave = async (postId: string) => {
-    try {
-      const response = await fetch(`/api/posts/${postId}/save`, {
-        method: "POST"
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast({
-          title: data.saved ? "Post Bookmarked" : "Post Removed from Bookmarks",
-          description: data.message,
-        })
-        
-        // Update local state or filter out if we're in bookmarks view
-        setPosts((prev) =>
-          prev.map((post) =>
-            post.id === postId ? { ...post, user_saved: data.saved } : post
-          ).filter((post) => view !== 'bookmarks' || data.saved)
-        )
-      }
-    } catch (error) {
-      console.error("Error toggling save:", error)
-    }
-  }
-
-  const handleUpdatePost = async (postId: string) => {
-    if (!editContent.trim()) return
-    try {
-      const response = await fetch(`/api/posts/${postId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: editContent }),
-      })
-
-      if (response.ok) {
-        setIsEditing(null)
-        setEditContent("")
-        toast({ title: "Post updated" })
-        fetchPosts()
-      }
-    } catch (error) {
-      console.error("Error updating post:", error)
-    }
-  }
-
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm("Are you sure you want to delete this post?")) return
-    try {
-      const response = await fetch(`/api/posts/${postId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        toast({ title: "Post deleted" })
-        fetchPosts()
-      }
-    } catch (error) {
-      console.error("Error deleting post:", error)
+    } catch (err) {
+      toast({ title: "Upload failed", description: "Could not upload file.", variant: "destructive" })
+    } finally {
+      e.target.value = ""
     }
   }
 
   const handleCreatePost = async () => {
-    if (!newPostContent.trim()) return
+    if (!newPostContent.trim() && !newPostImage && !newPostVideo) return
     setIsPosting(true)
-
     try {
-      const response = await fetch("/api/posts", {
+      const res = await fetch("/api/posts", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           content: newPostContent,
           image_url: newPostImage,
           video_url: newPostVideo,
-          media_urls: newPostMedia,
-          visibility: visibility
+          visibility,
         }),
       })
-
-      const data = await response.json().catch(() => ({}))
-
-      if (response.ok) {
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
         setNewPostContent("")
         setNewPostImage(null)
         setNewPostVideo(null)
-        setNewPostMedia([])
-
-        toast({
-          title: "Post created! 🎉",
-          description: "Your post has been shared with the community.",
-          className: "bg-green-50 border-green-200 text-green-800",
-        })
-
+        toast({ title: "Post shared! 🎉" })
         fetchPosts()
       } else {
-        toast({
-          title: "Couldn't create post",
-          description: data.error || "Something went wrong. Please try again.",
-          variant: "destructive",
-        })
+        toast({ title: "Couldn't create post", description: data.error || "Try again.", variant: "destructive" })
       }
     } catch (error) {
-      console.error("Error creating post:", error)
-      toast({
-        title: "Error",
-        description: "Network error while creating your post.",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Network error while posting.", variant: "destructive" })
     } finally {
       setIsPosting(false)
     }
-  }
-
-  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'multi') => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
-
-    try {
-      for (const file of Array.from(files)) {
-        const formData = new FormData()
-        formData.append("file", file)
-        formData.append("path", "posts")
-
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData
-        })
-        const data = await res.json()
-        
-        if (data.url) {
-          if (type === 'image') setNewPostImage(data.url)
-          if (type === 'video') setNewPostVideo(data.url)
-          if (type === 'multi') setNewPostMedia(prev => [...prev, data.url])
-        }
-      }
-    } catch (err) {
-      console.error("Error uploading media:", err)
-      toast({
-        title: "Upload failed",
-        description: "There was an error uploading your file.",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
-
-    if (diffInMinutes < 1) return "Just now"
-    if (diffInMinutes < 60) return `${diffInMinutes}m`
-    const diffInHours = Math.floor(diffInMinutes / 60)
-    if (diffInHours < 24) return `${diffInHours}h`
-    const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 7) return `${diffInDays}d`
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
   }
 
   if (loading) {
@@ -633,34 +811,34 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-2xl space-y-8 p-4 md:p-6">
+    <div className="container mx-auto max-w-xl space-y-4 p-3 md:p-6">
       {/* Header */}
-      <div className="flex items-end justify-between px-2">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">Feed</h1>
-          <p className="text-sm font-medium text-muted-foreground">Catch up with your alumni network</p>
+      <div className="flex items-end justify-between px-1">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">Community</h1>
+          <p className="text-sm text-muted-foreground">Catch up with your alumni network</p>
         </div>
-        <Badge variant="outline" className="h-8 px-3 text-xs font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/20">
-          Community
+        <Badge variant="outline" className="h-7 px-3 text-[11px] font-semibold uppercase tracking-wider text-primary ring-1 ring-primary/20">
+          Feed
         </Badge>
       </div>
 
-      {/* Bookmarks Toggle Tab View Selector */}
-      <div className="flex border-b border-border/40 px-2 pb-1 gap-4">
+      {/* Tabs */}
+      <div className="flex gap-4 border-b border-border/60 px-1">
         <button
-          onClick={() => setView('feed')}
+          onClick={() => setView("feed")}
           className={cn(
-            "text-sm font-bold pb-2 border-b-2 transition-all px-1",
-            view === 'feed' ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+            "border-b-2 px-1 pb-2 text-sm font-bold transition-all",
+            view === "feed" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
           All Posts
         </button>
         <button
-          onClick={() => setView('bookmarks')}
+          onClick={() => setView("bookmarks")}
           className={cn(
-            "text-sm font-bold pb-2 border-b-2 transition-all px-1 flex items-center gap-1.5",
-            view === 'bookmarks' ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+            "flex items-center gap-1.5 border-b-2 px-1 pb-2 text-sm font-bold transition-all",
+            view === "bookmarks" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
           <Bookmark className="h-4 w-4" />
@@ -668,81 +846,86 @@ export default function FeedPage() {
         </button>
       </div>
 
-      {/* Realtime: new posts available */}
-      {view === 'feed' && hasNewPosts && (
+      {/* New posts banner */}
+      {view === "feed" && hasNewPosts && (
         <div className="flex justify-center">
           <Button
             size="sm"
             className="rounded-full shadow-md"
-            onClick={() => { setHasNewPosts(false); fetchPosts() }}
+            onClick={() => {
+              setHasNewPosts(false)
+              fetchPosts()
+            }}
           >
             New posts available — tap to refresh
           </Button>
         </div>
       )}
 
-      {/* Create Post (only shown when on feed view) */}
-      {view === 'feed' && (
-        <Card className="border-none bg-gradient-to-br from-background via-background to-primary/5 shadow-xl shadow-primary/5 ring-1 ring-border/50">
-          <CardContent className="p-4 md:p-6">
-            <div className="flex gap-4">
-              <Avatar className="h-10 w-10 ring-2 ring-background md:h-12 md:w-12">
-                <AvatarImage src={profile?.photo_url || "/placeholder.svg"} alt={profile?.display_name} />
+      {/* Composer */}
+      {view === "feed" && (
+        <Card className="border-none bg-card shadow-sm ring-1 ring-border/60">
+          <CardContent className="p-4">
+            <div className="flex gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={profile?.photo_url || "/placeholder.svg"} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {profile?.display_name?.split(" ").map((n: any) => n[0]).join("") || "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-3">
                 <Textarea
                   placeholder={`What's on your mind, ${profile?.display_name?.split(" ")[0] || "Alumnus"}?`}
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
-                  className="min-h-[100px] border-none bg-transparent p-0 text-lg shadow-none focus-visible:ring-0 md:text-xl"
+                  className="min-h-[70px] resize-none border-none bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
                 />
-                {/* Media Upload Options */}
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary cursor-pointer">
-                    <ImageIcon className="h-4 w-4" />
-                    <span>Add Photo</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleMediaUpload(e, 'image')}
-                    />
-                  </label>
-                  <label className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary cursor-pointer">
-                    <VideoIcon className="h-4 w-4" />
-                    <span>Add Video</span>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      className="hidden"
-                      onChange={(e) => handleMediaUpload(e, 'video')}
-                    />
-                  </label>
-                </div>
 
-                {/* Media Previews */}
                 {(newPostImage || newPostVideo) && (
-                  <div className="relative mt-2 rounded-lg border overflow-hidden max-h-48 bg-black flex items-center justify-center">
-                    {newPostImage && <img src={newPostImage} alt="Upload preview" className="max-h-48 object-contain" />}
-                    {newPostVideo && <video src={newPostVideo} controls className="max-h-48 object-contain" />}
+                  <div className="relative flex max-h-56 items-center justify-center overflow-hidden rounded-lg border bg-black">
+                    {newPostImage && <img src={newPostImage} alt="preview" className="max-h-56 object-contain" />}
+                    {newPostVideo && <video src={newPostVideo} controls className="max-h-56 object-contain" />}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewPostImage(null)
+                        setNewPostVideo(null)
+                      }}
+                      className="absolute right-2 top-2 rounded-full bg-background/90 p-1 shadow"
+                      aria-label="Remove media"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                  <div className="flex items-center gap-1 md:gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+                  <div className="flex items-center gap-3">
+                    <label className="flex cursor-pointer items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary">
+                      <ImageIcon className="h-4 w-4" /> Photo
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleMediaUpload(e, "image")} />
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary">
+                      <VideoIcon className="h-4 w-4" /> Video
+                      <input type="file" accept="video/*" className="hidden" onChange={(e) => handleMediaUpload(e, "video")} />
+                    </label>
+                    <EmojiPicker onSelect={(emoji) => setNewPostContent((c) => c + emoji)} />
+                  </div>
+                  <div className="flex items-center gap-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-9 rounded-full">
-                          {visibility === "public" ? <Globe className="mr-2 h-4 w-4" /> : 
-                           visibility === "friends" ? <Users className="mr-2 h-4 w-4" /> : 
-                           <LockIcon className="mr-2 h-4 w-4" />}
-                          <span className="hidden sm:inline capitalize">{visibility}</span>
+                        <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs">
+                          {visibility === "public" ? (
+                            <Globe className="mr-1.5 h-3.5 w-3.5" />
+                          ) : visibility === "friends" ? (
+                            <Users className="mr-1.5 h-3.5 w-3.5" />
+                          ) : (
+                            <LockIcon className="mr-1.5 h-3.5 w-3.5" />
+                          )}
+                          <span className="capitalize">{visibility}</span>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-40 rounded-xl">
+                      <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem onClick={() => setVisibility("public")} className="gap-2">
                           <Globe className="h-4 w-4" /> Public
                         </DropdownMenuItem>
@@ -754,15 +937,15 @@ export default function FeedPage() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    <Button
+                      disabled={(!newPostContent.trim() && !newPostImage && !newPostVideo) || isPosting}
+                      onClick={handleCreatePost}
+                      className="h-9 rounded-full px-5"
+                    >
+                      {isPosting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Send className="mr-1.5 h-4 w-4" />}
+                      Post
+                    </Button>
                   </div>
-                  <Button 
-                    disabled={!newPostContent.trim() || isPosting} 
-                    onClick={handleCreatePost}
-                    className="h-10 rounded-full px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
-                  >
-                    {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Post
-                  </Button>
                 </div>
               </div>
             </div>
@@ -773,256 +956,28 @@ export default function FeedPage() {
       {/* Active hashtag filter */}
       {activeTag && (
         <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-4 py-2 text-sm">
-          <span>Showing posts tagged <span className="font-semibold text-primary">#{activeTag}</span></span>
-          <Button size="sm" variant="ghost" onClick={() => setActiveTag(null)}>Clear</Button>
+          <span>
+            Showing posts tagged <span className="font-semibold text-primary">#{activeTag}</span>
+          </span>
+          <Button size="sm" variant="ghost" onClick={() => setActiveTag(null)}>
+            Clear
+          </Button>
         </div>
       )}
 
-      {/* Posts Feed */}
-      <div className="space-y-10">
+      {/* Feed */}
+      <div className="space-y-4">
         {visiblePosts.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            {activeTag ? `No posts tagged #${activeTag}.` : view === 'bookmarks' ? 'No saved posts found.' : 'No posts in your feed yet.'}
+          <div className="py-16 text-center text-muted-foreground">
+            {activeTag
+              ? `No posts tagged #${activeTag}.`
+              : view === "bookmarks"
+                ? "No saved posts yet."
+                : "No posts in your feed yet."}
           </div>
         ) : (
           visiblePosts.map((post) => (
-            <div key={post.id} className="group relative">
-              {/* Header */}
-              <div className="flex items-center justify-between px-2 mb-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 ring-2 ring-primary/10">
-                    <AvatarImage src={post.author?.photo_url || "/placeholder.svg"} />
-                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
-                      {post.author?.display_name?.split(" ").map((n: string) => n[0]).join("") || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-bold leading-none">{post.author?.display_name || "Anonymous"}</p>
-                    <div className="mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">
-                      <span>{formatTimeAgo(post.created_at)}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-0.5">
-                        {post.visibility === 'public' ? <Globe className="h-2.5 w-2.5" /> : 
-                         post.visibility === 'friends' ? <Users className="h-2.5 w-2.5" /> : 
-                         <LockIcon className="h-2.5 w-2.5" />}
-                        {post.visibility || 'public'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expose Post Edit / Post Delete & Bookmark Actions visually */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="More options">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleToggleSave(post.id)}>
-                      <Bookmark className={cn("mr-2 h-4 w-4", post.user_saved && "fill-current text-yellow-500")} />
-                      {post.user_saved ? "Unsave Post" : "Save Post"}
-                    </DropdownMenuItem>
-                    {profile?.id && (post.author?.id === profile.id || profile.role === "admin") && (
-                      <>
-                        <DropdownMenuSeparator />
-                        {post.author?.id === profile.id && (
-                          <DropdownMenuItem onClick={() => {
-                            setIsEditing(post.id)
-                            setEditContent(post.content)
-                          }}>
-                            <Edit2 className="mr-2 h-4 w-4" />
-                            Edit Post
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem 
-                          onClick={() => handleDeletePost(post.id)}
-                          className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Post
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Card Body */}
-              <Card className="overflow-hidden border-none bg-card/50 shadow-2xl shadow-black/5 ring-1 ring-border/50 transition-all hover:shadow-primary/5">
-                <CardContent className="p-0">
-                  {isEditing === post.id ? (
-                    <div className="px-5 py-4 space-y-3">
-                      <Textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className="min-h-[100px]"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setIsEditing(null)}>
-                          Cancel
-                        </Button>
-                        <Button size="sm" onClick={() => handleUpdatePost(post.id)}>
-                          Save Changes
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="px-5 py-4">
-                        <RichContent
-                          text={post.content}
-                          className="whitespace-pre-wrap text-sm leading-relaxed md:text-base"
-                          onTagClick={setActiveTag}
-                        />
-                      </div>
-
-                      {/* Rich Media Visualizers (Images, Video Player, multi) */}
-                      {post.image_url && (
-                        <div className="relative overflow-hidden border-t border-border/10 max-h-96">
-                          <img 
-                            src={post.image_url} 
-                            alt="Post media" 
-                            className="w-full h-full object-cover max-h-96"
-                          />
-                        </div>
-                      )}
-                      
-                      {post.video_url && (
-                        <div className="relative overflow-hidden border-t border-border/10 max-h-[400px] bg-black flex items-center justify-center">
-                          <video 
-                            src={post.video_url} 
-                            controls 
-                            className="w-full max-h-[400px]"
-                            preload="metadata"
-                          />
-                        </div>
-                      )}
-
-                      {post.media_urls && post.media_urls.length > 0 && (
-                        <div className={cn(
-                          "grid gap-1 border-t border-border/10",
-                          post.media_urls.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                        )}>
-                          {post.media_urls.map((url: string, index: number) => {
-                            const isVideo = url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov');
-                            return (
-                              <div key={index} className="relative overflow-hidden aspect-video bg-muted">
-                                {isVideo ? (
-                                  <video src={url} controls className="w-full h-full object-cover" />
-                                ) : (
-                                  <img src={url} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  
-                  {/* Reactions counts by type summary bar */}
-                  {post.reactions_count > 0 && (
-                    <div className="flex w-full items-center justify-between px-5 py-2 border-t border-b border-border/5 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        {Object.entries(post.reactions_by_type || {}).map(([type, count]) => {
-                          const Icon = REACTION_ICONS[type] || Heart
-                          const color = REACTION_COLORS[type] || ""
-                          return (
-                            <div key={type} className={cn("flex items-center", color)}>
-                              <Icon className="h-3.5 w-3.5" />
-                            </div>
-                          )
-                        })}
-                        <span className="ml-1 font-medium">{post.reactions_count}</span>
-                      </div>
-                      <div className="flex gap-3">
-                        {post.comments_count > 0 && <span>{post.comments_count} comments</span>}
-                        {post.shares_count > 0 && <span>{post.shares_count} shares</span>}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reaction and action button triggers */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/10">
-                    <div className="flex items-center gap-4">
-                      {/* Emoji reaction picker trigger */}
-                      <div className="relative">
-                        <button 
-                          onClick={() => setShowReactionPicker(showReactionPicker === post.id ? null : post.id)}
-                          className={cn(
-                            "flex items-center gap-1.5 transition-all active:scale-110",
-                            post.user_reaction ? REACTION_COLORS[post.user_reaction] + " font-bold" : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {(() => {
-                            const Icon = post.user_reaction ? REACTION_ICONS[post.user_reaction] : Heart
-                            return <Icon className={cn("h-6 w-6", post.user_reaction && "fill-current")} />
-                          })()}
-                          <span className="text-xs capitalize">{post.user_reaction || "React"}</span>
-                        </button>
-
-                        {showReactionPicker === post.id && (
-                          <div className="absolute bottom-full left-0 mb-2 flex gap-1 rounded-xl border bg-background p-2 shadow-xl z-20">
-                            {Object.entries(REACTION_ICONS).map(([type, Icon]) => (
-                              <button
-                                key={type}
-                                className={cn(
-                                  "h-8 w-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors",
-                                  REACTION_COLORS[type]
-                                )}
-                                onClick={() => handleReaction(post.id, type)}
-                                aria-label={`React with ${type}`}
-                              >
-                                <Icon className="h-5 w-5" />
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <button className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
-                        <MessageCircle className="h-6 w-6" />
-                        <span className="text-xs">{post.comments_count > 0 ? post.comments_count : ""}</span>
-                      </button>
-
-                      {/* Connect ShareDialog component to API route */}
-                      <ShareDialog postId={post.id} onShared={fetchPosts} />
-                    </div>
-                  </div>
-                  
-                  {(Number(post.comments_count || 0) > 0 || (Array.isArray(post.recent_comments) && post.recent_comments.length > 0)) && (
-                    <div className="px-4 py-4 space-y-4">
-                      <button 
-                        onClick={fetchPosts}
-                        className="text-xs font-medium text-muted-foreground hover:underline"
-                      >
-                        Refresh comments ({Number(post.comments_count || 0)})
-                      </button>
-                      
-                      <div className="space-y-4">
-                        {post.recent_comments?.map((comment: any) => (
-                          <CommentItem 
-                            key={comment.id}
-                            comment={comment}
-                            post={post}
-                            profile={profile}
-                            onCommentAdded={handleCommentAdded}
-                            onCommentDeleted={handleCommentDeleted}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <CommentInput
-                    postId={post.id}
-                    profile={profile}
-                    onCommentAdded={(comment) => handleCommentAdded(post.id, comment)}
-                  />
-                </CardContent>
-              </Card>
-            </div>
+            <PostCard key={post.id} post={post} profile={profile} onChanged={fetchPosts} onShared={fetchPosts} />
           ))
         )}
       </div>

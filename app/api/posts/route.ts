@@ -17,8 +17,8 @@ function transformPosts(posts: any[], user: any, savedPostIds: string[] = []) {
       reactions_count: post.reactions?.length || 0,
       reactions_by_type,
       user_saved: savedPostIds.includes(post.id),
-      comments_count: typeof post.comments_count === 'number' ? post.comments_count : (post.comments_count?.[0]?.count || 0),
-      shares_count: typeof post.shares_count === 'number' ? post.shares_count : (post.shares_count?.[0]?.count || 0),
+      comments_count: Array.isArray(post.recent_comments) ? post.recent_comments.length : 0,
+      shares_count: Array.isArray(post.shares) ? post.shares.length : 0,
     }
   }) || []
 }
@@ -65,13 +65,27 @@ export async function GET(request: NextRequest) {
         author_id,
         visibility,
         status,
+        shared_post_id,
         author:profiles(id, display_name, photo_url, job_title, campus, membership_tier),
         reactions:post_reactions(id, reaction_type, user_id),
+        shares:post_shares(id),
         recent_comments:comments(
           id,
           content,
+          image_url,
+          media_urls,
           created_at,
-          author:profiles(id, display_name, photo_url)
+          parent_comment_id,
+          author:profiles!comments_author_id_fkey(id, display_name, photo_url)
+        ),
+        shared_post:posts!posts_shared_post_id_fkey(
+          id,
+          content,
+          image_url,
+          video_url,
+          media_urls,
+          created_at,
+          author:profiles(id, display_name, photo_url, campus)
         )
       `,
       )
@@ -104,7 +118,10 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error("[akurwas] Posts query error:", error)
       
-      // Fallback for missing columns or schema errors
+      // Bulletproof fallback for drifted / un-migrated databases: select only
+      // columns + the author join that are guaranteed to exist (no embeds that
+      // depend on the post_reactions/post_shares -> posts FKs). transformPosts
+      // tolerates the missing arrays and reports zero counts.
       const { data: fallbackPosts, error: fallbackError } = await supabase
           .from("posts")
           .select(
@@ -112,11 +129,15 @@ export async function GET(request: NextRequest) {
             id,
             content,
             image_url,
+            video_url,
+            media_urls,
             created_at,
             updated_at,
             author_id,
-            author:profiles(id, display_name, photo_url, job_title, campus),
-            reactions:post_reactions(id, reaction_type, user_id)
+            visibility,
+            status,
+            shared_post_id,
+            author:profiles(id, display_name, photo_url, job_title, campus)
           `,
           )
           .order("created_at", { ascending: false })

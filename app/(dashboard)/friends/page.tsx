@@ -138,22 +138,32 @@ export default function FriendsPage() {
       const response = await fetch(`/api/friends/${friendshipId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action }),
       })
 
-      if (response.ok) {
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        // Surface the real reason instead of silently doing nothing.
         toast({
-          title: action === "accept" ? "Friend request accepted" : "Friend request declined",
-          description: action === "accept" ? "You are now connected" : "Request has been declined",
+          title: "Couldn't process request",
+          description: data.error || "Please try again.",
+          variant: "destructive",
         })
-        
-        if (action === "accept" && requesterId) {
-          router.push(`/members/${requesterId}`)
-        } else {
-          fetchFriends()
-          fetchPendingRequests()
-        }
+        return
       }
+
+      toast({
+        title: action === "accept" ? "Friend request accepted" : "Friend request declined",
+        description: action === "accept" ? "You are now connected" : "Request has been declined",
+      })
+
+      // Refresh in place — staying on this page avoids navigating into a
+      // member profile that may not load, and the new friend appears under
+      // "My Friends" immediately.
+      fetchFriends()
+      fetchPendingRequests()
     } catch (error) {
       toast({
         title: "Error",
@@ -167,14 +177,16 @@ export default function FriendsPage() {
     try {
       const response = await fetch(`/api/friends/${friendshipId}`, {
         method: "DELETE",
+        credentials: "include",
       })
 
       if (response.ok) {
         toast({
-          title: "Friend removed",
+          title: "Removed",
           description: "Connection has been removed",
         })
         fetchFriends()
+        fetchPendingRequests()
       }
     } catch (error) {
       toast({
@@ -263,14 +275,28 @@ export default function FriendsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleFriendRequest(request.id, "accept", request.profile.id)}>
-                    <Check className="mr-1 h-4 w-4" />
-                    Accept
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleFriendRequest(request.id, "decline")}>
-                    <X className="mr-1 h-4 w-4" />
-                    Decline
-                  </Button>
+                  {request.is_requester ? (
+                    // Outgoing request we sent — can't accept our own; offer cancel.
+                    <>
+                      <span className="self-center text-xs text-muted-foreground">Request sent</span>
+                      <Button size="sm" variant="outline" onClick={() => removeFriend(request.id)}>
+                        <X className="mr-1 h-4 w-4" />
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    // Incoming request — we are the recipient and can accept/decline.
+                    <>
+                      <Button size="sm" onClick={() => handleFriendRequest(request.id, "accept", request.profile.id)}>
+                        <Check className="mr-1 h-4 w-4" />
+                        Accept
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleFriendRequest(request.id, "decline")}>
+                        <X className="mr-1 h-4 w-4" />
+                        Decline
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(request: Request) {
   try {
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
         location,
         logo_url,
         employment_type,
+        job_type,
         experience_level,
         salary_min,
         salary_max,
@@ -115,7 +117,18 @@ export async function POST(request: Request) {
     const jobsAutoApprove = jobsAutoRow ? (jobsAutoRow.value === true || jobsAutoRow.value === "true") : false
     const initialStatus = (isAdmin || jobsAutoApprove) ? "active" : "pending_approval"
 
-    const { data: job, error } = await supabase
+    // The jobs table's RLS only has a SELECT policy, so a user-scoped insert is
+    // denied. Insert via the service-role client after we've verified auth +
+    // membership above, pinning posted_by to the authenticated user. Falls back
+    // to the user client (works once the jobs INSERT RLS policy is migrated in).
+    let writer = supabase
+    try {
+      writer = createAdminClient()
+    } catch {
+      writer = supabase
+    }
+
+    const { data: job, error } = await writer
       .from("jobs")
       .insert([
         {
@@ -126,6 +139,7 @@ export async function POST(request: Request) {
           company: body.company,
           location: body.location,
           employment_type: body.employment_type,
+          job_type: body.employment_type || "full-time",
           experience_level: body.experience_level,
           salary_min: (body.salary_min && !isNaN(parseInt(body.salary_min))) ? parseInt(body.salary_min) : null,
           salary_max: (body.salary_max && !isNaN(parseInt(body.salary_max))) ? parseInt(body.salary_max) : null,

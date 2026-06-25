@@ -31,10 +31,33 @@ interface Application {
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
   reviewed: "bg-blue-100 text-blue-800 border-blue-200",
+  shortlisted: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  interview_scheduled: "bg-purple-100 text-purple-800 border-purple-200",
   interviewing: "bg-purple-100 text-purple-800 border-purple-200",
-  offered: "bg-green-100 text-green-800 border-green-200",
+  interviewed: "bg-purple-100 text-purple-800 border-purple-200",
+  offer_extended: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  offered: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  offer_accepted: "bg-green-100 text-green-800 border-green-200",
+  offer_declined: "bg-orange-100 text-orange-800 border-orange-200",
+  hired: "bg-green-100 text-green-800 border-green-200",
   rejected: "bg-red-100 text-red-800 border-red-200",
   withdrawn: "bg-gray-100 text-gray-800 border-gray-200",
+}
+
+const statusLabels: Record<string, string> = {
+  pending: "Pending",
+  reviewed: "Reviewed",
+  shortlisted: "Shortlisted",
+  interview_scheduled: "Interview Scheduled",
+  interviewing: "Interviewing",
+  interviewed: "Interviewed",
+  offer_extended: "Offer Extended",
+  offered: "Offer Extended",
+  offer_accepted: "Offer Accepted",
+  offer_declined: "Offer Declined",
+  hired: "Hired",
+  rejected: "Not Selected",
+  withdrawn: "Withdrawn",
 }
 
 export default function MyApplicationsPage() {
@@ -162,8 +185,8 @@ export default function MyApplicationsPage() {
                   <div className="bg-muted/30 md:w-64 p-5 flex flex-row md:flex-col justify-between md:justify-center items-center gap-4 border-t md:border-t-0 md:border-l">
                     <div className="text-center">
                       <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1 md:block hidden">Current Status</p>
-                      <Badge className={`${statusColors[app.status] || "bg-gray-100 text-gray-800"} border capitalize px-3 py-1`}>
-                        {app.status}
+                      <Badge className={`${statusColors[app.status] || "bg-gray-100 text-gray-800"} border px-3 py-1`}>
+                        {statusLabels[app.status] || app.status.replace(/_/g, " ")}
                       </Badge>
                     </div>
                     <Button variant="ghost" size="sm" className="gap-1 group md:w-full" asChild>

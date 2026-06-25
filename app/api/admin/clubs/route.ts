@@ -20,5 +20,17 @@ export async function GET() {
     return new NextResponse(error.message, { status: 500 })
   }
 
-  return NextResponse.json(clubs)
+  // Compute REAL member counts from club_memberships (the clubs.member_count
+  // column held seeded/dummy values). Expose as both members_count + member_count.
+  const { data: memberships } = await supabase!.from("club_memberships").select("club_id")
+  const counts: Record<string, number> = {}
+  for (const m of memberships || []) counts[m.club_id] = (counts[m.club_id] || 0) + 1
+
+  const withCounts = (clubs || []).map((c: any) => ({
+    ...c,
+    members_count: counts[c.id] || 0,
+    member_count: counts[c.id] || 0,
+  }))
+
+  return NextResponse.json(withCounts)
 }

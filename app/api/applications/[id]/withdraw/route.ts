@@ -18,10 +18,18 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("job_applications")
       .update({ status: "withdrawn", withdrawn_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq("id", id)
+    // Tolerate databases that haven't added withdrawn_at yet (PostgREST PGRST204
+    // / Postgres 42703): retry without it so withdrawal still works.
+    if (error && (error.code === "PGRST204" || error.code === "42703")) {
+      ;({ error } = await supabase
+        .from("job_applications")
+        .update({ status: "withdrawn", updated_at: new Date().toISOString() })
+        .eq("id", id))
+    }
     if (error) throw error
 
     const job: any = Array.isArray(app.job) ? app.job[0] : app.job
