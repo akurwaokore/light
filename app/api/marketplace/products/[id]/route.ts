@@ -88,6 +88,43 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 }
 
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const supabase = await createServerClient()
+    const { id } = await params
+
+    if (!isValidUUID(id)) {
+      return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Ownership-scoped delete: only the seller can remove their own listing.
+    const { data: deleted, error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", id)
+      .eq("seller_id", user.id)
+      .select("id")
+
+    if (error) throw error
+    if (!deleted || deleted.length === 0) {
+      return NextResponse.json({ error: "Listing not found or not yours" }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("[akurwas] Error deleting product:", error)
+    return NextResponse.json({ error: "Failed to delete listing" }, { status: 500 })
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createServerClient()

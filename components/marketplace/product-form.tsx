@@ -38,9 +38,18 @@ interface ProductFormProps {
   onSuccess?: () => void
   editMode?: boolean
   existingProduct?: ExistingProduct
+  // Base path for the edit request. Defaults to the seller-scoped route; admins
+  // editing another user's listing pass "/api/admin/marketplace".
+  apiBasePath?: string
 }
 
-export function ProductFormComponent({ productType, onSuccess, editMode = false, existingProduct }: ProductFormProps) {
+export function ProductFormComponent({
+  productType,
+  onSuccess,
+  editMode = false,
+  existingProduct,
+  apiBasePath = "/api/marketplace/products",
+}: ProductFormProps) {
   const [images, setImages] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -182,7 +191,7 @@ export function ProductFormComponent({ productType, onSuccess, editMode = false,
 
     try {
       const url =
-        editMode && existingProduct ? `/api/marketplace/products/${existingProduct.id}` : "/api/marketplace/products"
+        editMode && existingProduct ? `${apiBasePath}/${existingProduct.id}` : "/api/marketplace/products"
 
       const method = editMode ? "PATCH" : "POST"
 

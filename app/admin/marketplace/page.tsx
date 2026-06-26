@@ -537,9 +537,10 @@ export default function MarketplaceManagement() {
             <DialogTitle>Edit Listing</DialogTitle>
           </DialogHeader>
           {selectedProduct && (
-            <ProductFormComponent 
-              productType={selectedProduct.product_type} 
-              editMode={true} 
+            <ProductFormComponent
+              productType={selectedProduct.product_type}
+              editMode={true}
+              apiBasePath="/api/admin/marketplace"
               existingProduct={{
                 ...selectedProduct,
                 images: selectedProduct.image_urls || []

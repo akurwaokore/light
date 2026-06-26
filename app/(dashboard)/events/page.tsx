@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { CalendarIcon, MapPin, Clock, Users, Video, ArrowRight, Plus, Loader2 } from "lucide-react"
+import { CalendarIcon, MapPin, Clock, Users, Video, ArrowRight, Plus, Loader2, CheckCircle } from "lucide-react"
 import { EventForm } from "@/components/events/event-form"
 import Link from "next/link"
 
@@ -33,6 +33,7 @@ interface Event {
 export default function EventsPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [registeredEvents, setRegisteredEvents] = useState<string[]>([])
+  const [myBookings, setMyBookings] = useState<Event[]>([])
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [registering, setRegistering] = useState<string | null>(null)
@@ -40,6 +41,7 @@ export default function EventsPage() {
 
   useEffect(() => {
     fetchEvents()
+    fetchMyBookings()
   }, [])
 
   const fetchEvents = async () => {
@@ -56,6 +58,20 @@ export default function EventsPage() {
     }
   }
 
+  const fetchMyBookings = async () => {
+    try {
+      const res = await fetch("/api/events/registered", { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        const list: Event[] = data.events || []
+        setMyBookings(list)
+        setRegisteredEvents(list.map((e) => e.id))
+      }
+    } catch {
+      /* non-fatal */
+    }
+  }
+
   const handleRegister = async (eventId: string) => {
     setRegistering(eventId)
     try {
@@ -66,6 +82,7 @@ export default function EventsPage() {
         })
         if (response.ok) {
           setRegisteredEvents((prev) => prev.filter((id) => id !== eventId))
+          fetchMyBookings()
         }
       } else {
         // Register
@@ -74,6 +91,7 @@ export default function EventsPage() {
         })
         if (response.ok) {
           setRegisteredEvents((prev) => [...prev, eventId])
+          fetchMyBookings()
         }
       }
     } catch (error) {
@@ -255,6 +273,33 @@ export default function EventsPage() {
                 ) : (
                   <p className="py-8 text-center text-muted-foreground">No events scheduled for this date</p>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* My Bookings */}
+          {myBookings.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-serif">My Bookings</CardTitle>
+                <CardDescription>Events you have registered for</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {myBookings.map((event) => (
+                  <Link
+                    href={`/events/${event.id}`}
+                    key={`booking-${event.id}`}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border p-3 transition-colors hover:border-primary/50"
+                  >
+                    <div className="min-w-0">
+                      <h4 className="truncate font-medium">{event.title}</h4>
+                      <p className="text-sm text-muted-foreground">{formatDate(event.start_date)}</p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0">
+                      <CheckCircle className="mr-1 h-3 w-3" /> Registered
+                    </Badge>
+                  </Link>
+                ))}
               </CardContent>
             </Card>
           )}

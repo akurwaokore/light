@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, Lock, User, Loader2, AlertCircle } from "lucide-react"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { OnboardingAssistant } from "@/components/onboarding/onboarding-assistant"
 
 const signUpSchema = z
   .object({
@@ -359,14 +360,17 @@ function SignUpForm() {
 // prerendered page throws a CSR-bailout error in production.
 export default function SignUpPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-muted/30">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      }
-    >
-      <SignUpForm />
-    </Suspense>
+    <>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-muted/30">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        }
+      >
+        <SignUpForm />
+      </Suspense>
+      <OnboardingAssistant />
+    </>
   )
 }

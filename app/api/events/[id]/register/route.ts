@@ -1,6 +1,34 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
+// GET - Is the current user registered for this event?
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const supabase = await createServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ registered: false })
+
+    const { data } = await supabase
+      .from("event_registrations")
+      .select("id")
+      .eq("event_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    return NextResponse.json(
+      { registered: !!data },
+      { headers: { "Cache-Control": "no-store" } },
+    )
+  } catch {
+    return NextResponse.json({ registered: false })
+  }
+}
+
 // POST - Register for event
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

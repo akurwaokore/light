@@ -17,6 +17,7 @@ import {
 import { ScrollIndicator } from "@/components/landing/scroll-indicator"
 import { FloatingCard } from "@/components/landing/floating-card"
 import { ParticleBackground } from "@/components/landing/particle-background"
+import { OnboardingAssistant } from "@/components/onboarding/onboarding-assistant"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { Motto } from "@/components/motto"
@@ -397,6 +398,8 @@ export default function LandingPage() {
       <div className="relative z-10">
         <PublicFooter />
       </div>
+
+      <OnboardingAssistant />
     </div>
   )
 }

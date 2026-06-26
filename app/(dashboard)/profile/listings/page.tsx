@@ -35,6 +35,26 @@ export default function MyListingsPage() {
   const [loading, setLoading] = useState(true)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedListing, setSelectedListing] = useState<any>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDeleteListing = async (item: any) => {
+    if (!confirm(`Delete "${item.title}"? This cannot be undone.`)) return
+    setDeletingId(item.id)
+    try {
+      const res = await fetch(`/api/marketplace/products/${item.id}`, { method: "DELETE" })
+      if (res.ok) {
+        setListings((prev) => prev.filter((l) => l.id !== item.id))
+        toast.success("Listing deleted")
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data.error || "Could not delete listing")
+      }
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     fetchMyData()
@@ -135,8 +155,18 @@ export default function MyListingsPage() {
                       >
                          <Edit2 className="h-3.5 w-3.5" /> Edit
                       </Button>
-                      <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10"
+                        disabled={deletingId === item.id}
+                        onClick={() => handleDeleteListing(item)}
+                      >
+                        {deletingId === item.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
                       </Button>
                     </div>
                   </CardContent>

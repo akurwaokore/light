@@ -7,18 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Calendar as CalendarIcon, 
-  MapPin, 
-  Clock, 
-  Users, 
-  Video, 
-  ArrowLeft, 
-  Loader2, 
+import {
+  Calendar as CalendarIcon,
+  MapPin,
+  Clock,
+  Users,
+  Video,
+  ArrowLeft,
+  Loader2,
   CheckCircle,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Pencil,
+  Trash2,
 } from "lucide-react"
 import Link from "next/link"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { EventForm } from "@/components/events/event-form"
+import { toast } from "sonner"
 
 interface Event {
   id: string
@@ -33,6 +38,7 @@ interface Event {
   max_attendees: number | null
   image_url: string | null
   price: number
+  registered_count?: number
   organizer?: {
     id: string
     display_name: string
@@ -47,25 +53,49 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true)
   const [isRegistered, setIsRegistered] = useState(false)
   const [registering, setRegistering] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [showEdit, setShowEdit] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const isOwner = !!event?.organizer?.id && event.organizer.id === currentUserId
 
   useEffect(() => {
     if (params.id) {
       fetchEvent()
+      fetchMeAndRegistration()
     }
   }, [params.id])
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(`/api/events/${params.id}`)
+      const response = await fetch(`/api/events/${params.id}`, { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setEvent(data)
-        // In a real app, check registration status from API
       }
     } catch (error) {
       console.error("Error fetching event:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchMeAndRegistration = async () => {
+    try {
+      const [meRes, regRes] = await Promise.all([
+        fetch("/api/profile", { cache: "no-store" }),
+        fetch(`/api/events/${params.id}/register`, { cache: "no-store" }),
+      ])
+      if (meRes.ok) {
+        const me = await meRes.json()
+        setCurrentUserId(me?.id || null)
+      }
+      if (regRes.ok) {
+        const reg = await regRes.json()
+        setIsRegistered(!!reg.registered)
+      }
+    } catch {
+      /* non-fatal */
     }
   }
 
@@ -78,6 +108,10 @@ export default function EventDetailPage() {
       })
       if (response.ok) {
         setIsRegistered(!isRegistered)
+        fetchEvent() // refresh booking count
+      } else {
+        const data = await response.json().catch(() => ({}))
+        toast.error(data.error || "Could not update registration")
       }
     } catch (error) {
       console.error("Registration error:", error)
@@ -85,6 +119,54 @@ export default function EventDetailPage() {
       setRegistering(false)
     }
   }
+
+  const handleUpdate = async (data: any) => {
+    if (!event) return
+    const res = await fetch(`/api/events/${event.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+    if (res.ok) {
+      toast.success("Event updated")
+      setShowEdit(false)
+      fetchEvent()
+    } else {
+      const d = await res.json().catch(() => ({}))
+      toast.error(d.error || "Could not update event")
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!event) return
+    if (!confirm(`Delete "${event.title}"? This cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/events/${event.id}`, { method: "DELETE" })
+      if (res.ok) {
+        toast.success("Event deleted")
+        router.push("/events")
+      } else {
+        const d = await res.json().catch(() => ({}))
+        toast.error(d.error || "Could not delete event")
+      }
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // Map the normalized event into the shape EventForm expects for editing.
+  const toFormEvent = (e: Event): any => ({
+    ...e,
+    date: e.start_date ? e.start_date.slice(0, 10) : "",
+    time: e.start_date ? new Date(e.start_date).toTimeString().slice(0, 5) : "",
+    end_time: e.end_date ? new Date(e.end_date).toTimeString().slice(0, 5) : "",
+    category: e.event_type,
+    google_meet_link: e.meeting_link || "",
+    is_free: !(e.price > 0),
+    ticket_price: e.price || 0,
+    max_attendees: e.max_attendees ?? "",
+  })
 
   if (loading) {
     return (
@@ -123,11 +205,29 @@ export default function EventDetailPage() {
 
   return (
     <div className="container mx-auto space-y-6 p-4 md:p-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
+        {isOwner && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -191,6 +291,18 @@ export default function EventDetailPage() {
                   {event.max_attendees ? `Up to ${event.max_attendees} guests` : "Unlimited"}
                 </span>
               </div>
+              <div className="flex items-center justify-between gap-2 min-w-0 text-sm">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Users className="h-4 w-4" /> Booked
+                </span>
+                <span className="font-medium">{event.registered_count ?? 0} registered</span>
+              </div>
+              {isOwner ? (
+                <p className="rounded-md bg-muted/50 p-3 text-center text-sm text-muted-foreground">
+                  You're the organizer of this event.
+                </p>
+              ) : (
+              <>
               <Button className="w-full" size="lg" onClick={handleRegister} disabled={registering}>
                 {registering ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -207,6 +319,8 @@ export default function EventDetailPage() {
                 <p className="text-center text-xs text-muted-foreground">
                   You are registered for this event.
                 </p>
+              )}
+              </>
               )}
             </CardContent>
           </Card>
@@ -253,6 +367,17 @@ export default function EventDetailPage() {
           )}
         </div>
       </div>
+
+      {isOwner && (
+        <Dialog open={showEdit} onOpenChange={setShowEdit}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Event</DialogTitle>
+            </DialogHeader>
+            <EventForm event={toFormEvent(event)} onSubmit={handleUpdate} onCancel={() => setShowEdit(false)} />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
