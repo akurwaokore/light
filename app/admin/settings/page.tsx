@@ -93,7 +93,7 @@ export default function SystemSettings() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">System Settings</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">System Settings</h1>
           <p className="text-muted-foreground">Configure platform settings and preferences</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -195,7 +195,7 @@ export default function SystemSettings() {
               <CardDescription>Configure user sign-up and verification</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Enable Registration</Label>
                   <p className="text-sm text-muted-foreground">Allow new users to create accounts</p>
@@ -206,7 +206,7 @@ export default function SystemSettings() {
                 />
               </div>
               <Separator />
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Require Email Verification</Label>
                   <p className="text-sm text-muted-foreground">
@@ -232,7 +232,7 @@ export default function SystemSettings() {
               <CardDescription>Configure marketplace and commission rates</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Enable Marketplace</Label>
                   <p className="text-sm text-muted-foreground">Allow users to buy and sell products</p>
@@ -267,7 +267,7 @@ export default function SystemSettings() {
               <CardDescription>Configure event management features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Enable Events</Label>
                   <p className="text-sm text-muted-foreground">Allow users to create and manage events</p>
@@ -300,7 +300,7 @@ export default function SystemSettings() {
               <CardDescription>Enable or disable platform features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Enable Donations</Label>
                   <p className="text-sm text-muted-foreground">Allow fundraising campaigns and donations</p>
@@ -311,7 +311,7 @@ export default function SystemSettings() {
                 />
               </div>
               <Separator />
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Enable Job Board</Label>
                   <p className="text-sm text-muted-foreground">Allow job postings and applications</p>
@@ -425,7 +425,7 @@ export default function SystemSettings() {
               <CardDescription>Configure notification preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Email Notifications</Label>
                   <p className="text-sm text-muted-foreground">Send notifications via email</p>
@@ -436,7 +436,7 @@ export default function SystemSettings() {
                 />
               </div>
               <Separator />
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Push Notifications</Label>
                   <p className="text-sm text-muted-foreground">Send browser push notifications</p>
@@ -460,7 +460,7 @@ export default function SystemSettings() {
               <CardDescription>Platform security configuration</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Two-Factor Authentication</Label>
                   <p className="text-sm text-muted-foreground">Require 2FA for admin accounts</p>
@@ -487,7 +487,7 @@ export default function SystemSettings() {
               <CardDescription>System-level configuration</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Maintenance Mode</Label>
                   <p className="text-sm text-muted-foreground">Put site in maintenance mode</p>
@@ -498,7 +498,7 @@ export default function SystemSettings() {
                 />
               </div>
               <Separator />
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label>Analytics Tracking</Label>
                   <p className="text-sm text-muted-foreground">Enable platform analytics</p>

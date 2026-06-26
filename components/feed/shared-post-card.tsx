@@ -22,7 +22,7 @@ export function SharedPostCard({ sharedPost }: SharedPostCardProps) {
     <Card className="mt-3 border-2 bg-muted/20">
       <CardContent className="pt-4">
         <div className="flex items-start gap-3">
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-8 w-8 shrink-0">
             <AvatarImage src={sharedPost.author.photo_url || "/placeholder.svg"} />
             <AvatarFallback>
               {sharedPost.author.display_name
@@ -31,19 +31,19 @@ export function SharedPostCard({ sharedPost }: SharedPostCardProps) {
                 .join("")}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium">{sharedPost.author.display_name}</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate text-sm font-medium">{sharedPost.author.display_name}</p>
               {sharedPost.author.campus && (
-                <span className="text-xs text-muted-foreground">• {sharedPost.author.campus}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">• {sharedPost.author.campus}</span>
               )}
             </div>
-            <p className="mt-2 text-sm">{sharedPost.content}</p>
+            <p className="mt-2 break-words text-sm">{sharedPost.content}</p>
             {sharedPost.image_url && (
               <img
                 src={sharedPost.image_url || "/placeholder.svg"}
                 alt="Shared post"
-                className="mt-2 max-h-64 rounded-lg object-cover"
+                className="mt-2 max-h-64 max-w-full rounded-lg object-cover"
               />
             )}
           </div>

@@ -90,11 +90,11 @@ export default function AdminPointsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-heading text-3xl font-bold">Points Management Dashboard</h1>
+        <div className="min-w-0">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Points Management Dashboard</h1>
           <p className="text-muted-foreground">Monitor user engagement and milestone progress</p>
         </div>
-        <Button variant="outline" className="gap-2 bg-transparent">
+        <Button variant="outline" className="w-full sm:w-auto gap-2 bg-transparent">
           <Download className="h-4 w-4" />
           Export Report
         </Button>
@@ -119,7 +119,7 @@ export default function AdminPointsPage() {
       {/* Charts Section */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Milestone Distribution */}
-        <Card className="glass-card border-0">
+        <Card className="glass-card border-0 min-w-0">
           <CardHeader>
             <CardTitle>Milestone Distribution</CardTitle>
             <CardDescription>Users at each milestone level (out of 1000 points)</CardDescription>

@@ -215,7 +215,7 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                 onChange={(e) => setNewPostContent(e.target.value)}
                 className="min-h-[80px] resize-none glass"
               />
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex gap-2">
                   <Button variant="ghost" size="sm">
                     <ImageIcon className="mr-2 h-4 w-4" />
@@ -271,9 +271,9 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
             return (
               <Card key={post.id} className="glass-strong rounded-3xl border-primary/20 shadow-xl">
                 <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar className="shrink-0">
                         <AvatarImage src={post.author.photo_url || "/placeholder.svg"} alt={post.author.display_name} />
                         <AvatarFallback>
                           {post.author.display_name
@@ -282,9 +282,9 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                           <p className="font-medium">{post.author.display_name}</p>
+                           <p className="truncate font-medium">{post.author.display_name}</p>
                            {post.author.is_hiring && <Badge className="h-4 text-[9px] bg-blue-600 px-1 border-0">Hiring</Badge>}
                            {post.author.open_to_work && <Badge variant="secondary" className="h-4 text-[9px] bg-green-600 text-white px-1 border-0">Open to Work</Badge>}
                         </div>
@@ -297,7 +297,7 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -313,9 +313,9 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                   </div>
                 </CardHeader>
                 <CardContent className="pb-3">
-                  <p className="whitespace-pre-wrap">{post.content}</p>
+                  <p className="whitespace-pre-wrap break-words">{post.content}</p>
                   {post.image_url && (
-                    <img src={post.image_url || "/placeholder.svg"} alt="Post" className="mt-3 rounded-lg" />
+                    <img src={post.image_url || "/placeholder.svg"} alt="Post" className="mt-3 h-auto max-w-full rounded-lg" />
                   )}
                   {post.location && (
                     <div className="mt-2 flex items-center gap-1 text-sm text-muted-foreground">

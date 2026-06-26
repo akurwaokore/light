@@ -46,7 +46,7 @@ export function RichContent({
         }
         if (part.startsWith("http")) {
           return (
-            <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+            <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="break-all text-primary underline">
               {part}
             </a>
           )

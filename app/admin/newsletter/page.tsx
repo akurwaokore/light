@@ -113,17 +113,17 @@ export default function NewsletterManagement() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Newsletter Management</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Newsletter Management</h1>
           <p className="text-muted-foreground">Direct communication with your alumni network</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 w-full sm:w-auto">
               <Plus className="h-4 w-4" />
               New Newsletter
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Compose Newsletter</DialogTitle>
               <DialogDescription>Design a message to send to all active subscribers.</DialogDescription>

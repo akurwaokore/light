@@ -102,14 +102,14 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-bold">Dashboard Overview</h1>
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold">Dashboard Overview</h1>
         <p className="text-muted-foreground">
           Welcome back! Here's what's happening with your alumni community.
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -138,23 +138,23 @@ export default function AdminDashboard() {
 
       {/* Points System Monitoring Card */}
       <Card className="glass-card border-0 bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
+              <Trophy className="h-5 w-5 shrink-0 text-yellow-500" />
               Points System Overview
             </CardTitle>
             <CardDescription>Active user engagement and milestone tracking</CardDescription>
           </div>
-          <Link href="/admin/points">
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+          <Link href="/admin/points" className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto gap-2 bg-transparent">
               View Details
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           </Link>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />

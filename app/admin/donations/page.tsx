@@ -117,19 +117,19 @@ export default function DonationsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Donations Management</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Donations Management</h1>
           <p className="text-muted-foreground">Track and manage alumni fundraising initiatives</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 w-full sm:w-auto">
               <Plus className="h-4 w-4" />
               New Campaign
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Donation Campaign</DialogTitle>
               <DialogDescription>Start a new fundraising drive for the community.</DialogDescription>

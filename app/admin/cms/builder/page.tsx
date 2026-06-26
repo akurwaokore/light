@@ -114,13 +114,13 @@ export default function CmsBuilderPage() {
     update((t) => t[si].rows[ri].columns[ci].blocks.push({ type, content: {} }))
 
   return (
-    <div className="container mx-auto max-w-5xl space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="container mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Page Builder</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">Page Builder</h1>
           <p className="text-sm text-muted-foreground">Build any page from sections, rows, columns and blocks.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Input value={slug} onChange={(e) => setSlug(e.target.value)} className="w-40" placeholder="page slug" />
           <Button variant="outline" onClick={() => load(slug)}>Load</Button>
           <Button variant="outline" asChild><a href={`/p/${slug}`} target="_blank" rel="noreferrer"><Eye className="mr-1 h-4 w-4" /> Preview</a></Button>
@@ -130,11 +130,11 @@ export default function CmsBuilderPage() {
 
       {/* All CMS pages — visible & editable */}
       <div className="rounded-lg border bg-muted/30 p-3">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-semibold">Pages</span>
           <div className="flex items-center gap-2">
             <Input value={newSlug} onChange={(e) => setNewSlug(e.target.value)} placeholder="new-page-slug" className="h-8 w-44" />
-            <Button size="sm" variant="outline" onClick={createPage}>+ New page</Button>
+            <Button size="sm" variant="outline" onClick={createPage} className="shrink-0">+ New page</Button>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -191,7 +191,7 @@ export default function CmsBuilderPage() {
           {tree.map((section, si) => (
             <Card key={si} className="border-2">
               <CardContent className="space-y-4 p-4">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">Section {si + 1}</span>
                   <Input className="h-8 w-40" value={section.section_type}
                     onChange={(e) => update((t) => { t[si].section_type = e.target.value })} placeholder="type" />

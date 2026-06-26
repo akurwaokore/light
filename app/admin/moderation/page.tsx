@@ -170,7 +170,7 @@ export default function ContentModeration() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Content Moderation</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Content Moderation</h1>
           <p className="text-muted-foreground">Review and manage user-generated content</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -437,7 +437,7 @@ export default function ContentModeration() {
 
       {/* Review Dialog */}
       <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Review Content</DialogTitle>
             <DialogDescription>Detailed content review and moderation</DialogDescription>

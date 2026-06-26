@@ -111,7 +111,7 @@ export default function AdminNotificationsPage() {
     <div className="container mx-auto space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Notifications</h1>
           <p className="text-muted-foreground">Manage and view all your system alerts</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -158,18 +158,18 @@ export default function AdminNotificationsPage() {
                   <CardContent className="flex items-start gap-4 p-4">
                     <div className="mt-1">{getIcon(notification.type)}</div>
                     <div className="flex-1 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className={`font-medium ${notification.read ? 'text-muted-foreground' : 'text-foreground'}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`font-medium truncate ${notification.read ? 'text-muted-foreground' : 'text-foreground'}`}>
                           {notification.title}
                         </p>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground shrink-0">
                           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {notification.message}
                       </p>
-                      <div className="flex items-center gap-4 pt-2">
+                      <div className="flex flex-wrap items-center gap-4 pt-2">
                         {!notification.read && (
                           <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => markAsRead(notification.id)}>
                             <Check className="mr-1 h-3 w-3" />

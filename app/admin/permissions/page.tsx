@@ -131,13 +131,13 @@ export default function PermissionsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Permissions & Roles</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Permissions & Roles</h1>
           <p className="text-muted-foreground">Manage user roles and access permissions</p>
         </div>
-        <Button 
-            className="gap-2"
+        <Button
+            className="w-full sm:w-auto gap-2"
             onClick={() => {
                 const newRole: Partial<Role> = { name: "", description: "", permissions: [] };
                 setEditingRole(newRole);

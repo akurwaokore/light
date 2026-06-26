@@ -172,9 +172,9 @@ export default function JobsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Jobs Management</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Jobs Management</h1>
           <p className="text-muted-foreground">Manage alumni career opportunities and listings</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -189,7 +189,7 @@ export default function JobsManagement() {
               New Job Posting
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Job Posting</DialogTitle>
               <DialogDescription>Add a new job opportunity for the alumni network.</DialogDescription>

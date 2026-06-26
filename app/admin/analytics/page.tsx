@@ -52,12 +52,12 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-heading text-3xl font-bold">Analytics</h1>
+        <div className="min-w-0">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Analytics</h1>
           <p className="text-muted-foreground">Track platform performance and member engagement</p>
         </div>
         <Select defaultValue="30days">
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
           <SelectContent>
@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
 
         <TabsContent value="traffic" className="space-y-4">
           <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 min-w-0">
               <CardHeader>
                 <CardTitle>Member Growth</CardTitle>
                 <CardDescription>New members joining each month (last 6 months)</CardDescription>

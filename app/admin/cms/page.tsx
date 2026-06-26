@@ -299,11 +299,11 @@ export default function CMSPage() {
       <AdminSidebar />
       <SidebarInset>
         <AdminHeader />
-        <main className="flex-1 p-6 bg-muted/30">
+        <main className="flex-1 p-4 md:p-6 bg-muted/30">
           <div className="container mx-auto">
             <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Content Management System</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Content Management System</h1>
                 <p className="text-muted-foreground">Manage your website's dynamic content, sections, and assets.</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -326,14 +326,14 @@ export default function CMSPage() {
             </div>
 
             <Tabs defaultValue="general" className="space-y-6">
-              <TabsList className="bg-muted/50 p-1 flex-wrap h-auto">
-                <TabsTrigger value="general" className="gap-2"><Globe className="h-4 w-4" />General</TabsTrigger>
-                <TabsTrigger value="hero" className="gap-2"><Layout className="h-4 w-4" />Hero</TabsTrigger>
-                <TabsTrigger value="pages" className="gap-2"><FileText className="h-4 w-4" />Pages</TabsTrigger>
-                <TabsTrigger value="features" className="gap-2"><MessageSquare className="h-4 w-4" />Features</TabsTrigger>
-                <TabsTrigger value="testimonials" className="gap-2"><ImageIcon className="h-4 w-4" />Testimonials</TabsTrigger>
-                <TabsTrigger value="stats" className="gap-2"><BarChart3 className="h-4 w-4" />Stats</TabsTrigger>
-                <TabsTrigger value="video" className="gap-2"><Video className="h-4 w-4" />Video Gallery</TabsTrigger>
+              <TabsList className="bg-muted/50 p-1 flex-wrap h-auto w-full justify-start overflow-x-auto">
+                <TabsTrigger value="general" className="gap-2 shrink-0"><Globe className="h-4 w-4" />General</TabsTrigger>
+                <TabsTrigger value="hero" className="gap-2 shrink-0"><Layout className="h-4 w-4" />Hero</TabsTrigger>
+                <TabsTrigger value="pages" className="gap-2 shrink-0"><FileText className="h-4 w-4" />Pages</TabsTrigger>
+                <TabsTrigger value="features" className="gap-2 shrink-0"><MessageSquare className="h-4 w-4" />Features</TabsTrigger>
+                <TabsTrigger value="testimonials" className="gap-2 shrink-0"><ImageIcon className="h-4 w-4" />Testimonials</TabsTrigger>
+                <TabsTrigger value="stats" className="gap-2 shrink-0"><BarChart3 className="h-4 w-4" />Stats</TabsTrigger>
+                <TabsTrigger value="video" className="gap-2 shrink-0"><Video className="h-4 w-4" />Video Gallery</TabsTrigger>
               </TabsList>
 
               {/* General Tab */}
@@ -449,10 +449,11 @@ export default function CMSPage() {
                       <PageSectionEditor value={pageContent} onChange={setPageContent} />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <Button
                         variant="outline"
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => setPageContent(PAGE_DEFAULTS[pageSlug])}
                       >
                         Reset to defaults
@@ -460,7 +461,7 @@ export default function CMSPage() {
                       <Button
                         onClick={() => saveSection(`page:${pageSlug}`, pageContent)}
                         disabled={saving}
-                        className="gap-2"
+                        className="gap-2 w-full sm:w-auto"
                       >
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         Save Page
@@ -473,9 +474,9 @@ export default function CMSPage() {
               {/* Features Tab */}
               <TabsContent value="features" className="space-y-6">
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div><CardTitle>Features</CardTitle><CardDescription>List your platform's core features.</CardDescription></div>
-                    <Button onClick={() => addArrayItem(setFeatures, { title: "New Feature", description: "Description", icon: "Briefcase" })} size="sm" className="gap-2"><Plus className="h-4 w-4" /> Add Feature</Button>
+                    <Button onClick={() => addArrayItem(setFeatures, { title: "New Feature", description: "Description", icon: "Briefcase" })} size="sm" className="gap-2 w-full sm:w-auto"><Plus className="h-4 w-4" /> Add Feature</Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {features.map((feature, idx) => (
@@ -485,7 +486,7 @@ export default function CMSPage() {
                           <Button variant="ghost" size="icon" onClick={() => moveItem(setFeatures, idx, 'down')} disabled={idx === features.length - 1}><MoveDown className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeArrayItem(setFeatures, idx)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1"><Label>Title</Label><Input value={feature.title} onChange={(e) => updateArrayItem(setFeatures, idx, 'title', e.target.value)} /></div>
                           <div className="space-y-1"><Label>Icon (Lucide name)</Label><Input value={feature.icon} onChange={(e) => updateArrayItem(setFeatures, idx, 'icon', e.target.value)} /></div>
                         </div>
@@ -500,9 +501,9 @@ export default function CMSPage() {
               {/* Testimonials Tab */}
               <TabsContent value="testimonials" className="space-y-6">
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div><CardTitle>Testimonials</CardTitle><CardDescription>Social proof from your members.</CardDescription></div>
-                    <Button onClick={() => addArrayItem(setTestimonials, { quote: "Best platform!", author: "Name", role: "Class of 2024" })} size="sm" className="gap-2"><Plus className="h-4 w-4" /> Add Testimonial</Button>
+                    <Button onClick={() => addArrayItem(setTestimonials, { quote: "Best platform!", author: "Name", role: "Class of 2024" })} size="sm" className="gap-2 w-full sm:w-auto"><Plus className="h-4 w-4" /> Add Testimonial</Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {testimonials.map((t, idx) => (
@@ -511,7 +512,7 @@ export default function CMSPage() {
                           <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeArrayItem(setTestimonials, idx)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                         <div className="space-y-1"><Label>Quote</Label><Input value={t.quote} onChange={(e) => updateArrayItem(setTestimonials, idx, 'quote', e.target.value)} /></div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1"><Label>Author</Label><Input value={t.author} onChange={(e) => updateArrayItem(setTestimonials, idx, 'author', e.target.value)} /></div>
                           <div className="space-y-1"><Label>Role</Label><Input value={t.role} onChange={(e) => updateArrayItem(setTestimonials, idx, 'role', e.target.value)} /></div>
                         </div>
@@ -525,15 +526,15 @@ export default function CMSPage() {
               {/* Stats Tab */}
               <TabsContent value="stats" className="space-y-6">
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div><CardTitle>Stats</CardTitle><CardDescription>Platform impact numbers.</CardDescription></div>
-                    <Button onClick={() => addArrayItem(setStats, { label: "New Stat", value: "1,000", icon: "Users" })} size="sm" className="gap-2"><Plus className="h-4 w-4" /> Add Stat</Button>
+                    <Button onClick={() => addArrayItem(setStats, { label: "New Stat", value: "1,000", icon: "Users" })} size="sm" className="gap-2 w-full sm:w-auto"><Plus className="h-4 w-4" /> Add Stat</Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {stats.map((s, idx) => (
                       <div key={idx} className="p-4 border rounded-lg space-y-3 relative">
                         <div className="absolute right-2 top-2"><Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeArrayItem(setStats, idx)}><Trash2 className="h-4 w-4" /></Button></div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div className="space-y-1"><Label>Label</Label><Input value={s.label} onChange={(e) => updateArrayItem(setStats, idx, 'label', e.target.value)} /></div>
                           <div className="space-y-1"><Label>Value</Label><Input value={s.value} onChange={(e) => updateArrayItem(setStats, idx, 'value', e.target.value)} /></div>
                           <div className="space-y-1"><Label>Icon</Label><Input value={s.icon} onChange={(e) => updateArrayItem(setStats, idx, 'icon', e.target.value)} /></div>
@@ -548,9 +549,9 @@ export default function CMSPage() {
               {/* Video Gallery Tab */}
               <TabsContent value="video" className="space-y-6">
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div><CardTitle>Video Gallery</CardTitle><CardDescription>Memorable moments from the alumni community.</CardDescription></div>
-                    <Button onClick={() => addArrayItem(setVideoGallery, { title: "New Video", subtitle: "Subtitle", image_url: "/placeholder.jpg", video_url: "", type: "youtube", size: "small" })} size="sm" className="gap-2"><Plus className="h-4 w-4" /> Add Item</Button>
+                    <Button onClick={() => addArrayItem(setVideoGallery, { title: "New Video", subtitle: "Subtitle", image_url: "/placeholder.jpg", video_url: "", type: "youtube", size: "small" })} size="sm" className="gap-2 w-full sm:w-auto"><Plus className="h-4 w-4" /> Add Item</Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {videoGallery.map((v, idx) => (

@@ -195,7 +195,7 @@ export default function MarketplaceManagement() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Marketplace Management</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold">Marketplace Management</h1>
           <p className="text-muted-foreground">Approve listings and manage alumni e-commerce</p>
         </div>
         <div className="flex items-center gap-3">
@@ -206,7 +206,7 @@ export default function MarketplaceManagement() {
                 New Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add Marketplace Product</DialogTitle>
                 <DialogDescription>Manually create a pre-approved alumni listing.</DialogDescription>
@@ -368,7 +368,7 @@ export default function MarketplaceManagement() {
 
         <Card className="md:col-span-3">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2 text-xl font-bold">
                 <ShoppingBag className="h-5 w-5 text-primary" />
                 Marketplace Inventory
@@ -532,7 +532,7 @@ export default function MarketplaceManagement() {
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Listing</DialogTitle>
           </DialogHeader>

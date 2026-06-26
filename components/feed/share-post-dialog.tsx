@@ -79,7 +79,7 @@ export function SharePostDialog({ postId, originalPost, currentUser, onShareSucc
           Share
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-h-[90vh] w-[95vw] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Share Post</DialogTitle>
           <DialogDescription>Add your thoughts about this post</DialogDescription>
@@ -88,7 +88,7 @@ export function SharePostDialog({ postId, originalPost, currentUser, onShareSucc
         <div className="space-y-4">
           {/* Current User */}
           <div className="flex items-center gap-3">
-            <Avatar>
+            <Avatar className="shrink-0">
               <AvatarImage src={currentUser.photo_url || "/placeholder.svg"} />
               <AvatarFallback>
                 {currentUser.display_name
@@ -97,8 +97,8 @@ export function SharePostDialog({ postId, originalPost, currentUser, onShareSucc
                   .join("")}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-medium">{currentUser.display_name}</p>
+            <div className="min-w-0">
+              <p className="truncate font-medium">{currentUser.display_name}</p>
               <p className="text-sm text-muted-foreground">Sharing publicly</p>
             </div>
           </div>
@@ -124,14 +124,14 @@ export function SharePostDialog({ postId, originalPost, currentUser, onShareSucc
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{originalPost.author.display_name}</p>
-                  <p className="mt-2 text-sm">{originalPost.content}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{originalPost.author.display_name}</p>
+                  <p className="mt-2 break-words text-sm">{originalPost.content}</p>
                   {originalPost.image_url && (
                     <img
                       src={originalPost.image_url || "/placeholder.svg"}
                       alt="Post"
-                      className="mt-2 max-h-48 rounded-lg object-cover"
+                      className="mt-2 max-h-48 max-w-full rounded-lg object-cover"
                     />
                   )}
                 </div>

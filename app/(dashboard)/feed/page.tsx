@@ -192,7 +192,7 @@ function CommentItem({
         )}
 
         {/* Comment meta row: react / reply / count / delete */}
-        <div className="mt-0.5 flex items-center gap-3 px-3 text-[11px] font-semibold text-muted-foreground">
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-3 text-[11px] font-semibold text-muted-foreground">
           <span>{formatTimeAgo(comment.created_at)}</span>
           <div
             className="relative"
@@ -516,9 +516,9 @@ function PostCard({
   return (
     <Card className="overflow-hidden border-none bg-card shadow-sm ring-1 ring-border/60">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4">
-        <div className="flex items-center gap-3">
-          <Link href={post.author?.id ? `/members/${post.author.id}` : "#"}>
+      <div className="flex items-center justify-between gap-2 px-4 pt-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link href={post.author?.id ? `/members/${post.author.id}` : "#"} className="shrink-0">
             <Avatar className="h-10 w-10 ring-1 ring-border">
               <AvatarImage src={post.author?.photo_url || "/placeholder.svg"} />
               <AvatarFallback className="bg-primary/5 text-xs font-bold text-primary">
@@ -526,10 +526,10 @@ function PostCard({
               </AvatarFallback>
             </Avatar>
           </Link>
-          <div>
+          <div className="min-w-0">
             <Link
               href={post.author?.id ? `/members/${post.author.id}` : "#"}
-              className="text-sm font-bold leading-none hover:underline"
+              className="block truncate text-sm font-bold leading-none hover:underline"
             >
               {post.author?.display_name || "Anonymous"}
             </Link>
@@ -548,7 +548,7 @@ function PostCard({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" aria-label="More options">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-full" aria-label="More options">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -601,7 +601,7 @@ function PostCard({
         <>
           {post.content && (
             <div className="px-4 py-3">
-              <RichContent text={post.content} className="whitespace-pre-wrap text-sm leading-relaxed md:text-[15px]" />
+              <RichContent text={post.content} className="whitespace-pre-wrap break-words text-sm leading-relaxed md:text-[15px]" />
             </div>
           )}
 

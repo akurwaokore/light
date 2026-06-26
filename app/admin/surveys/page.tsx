@@ -225,14 +225,14 @@ export default function SurveysPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-heading font-bold">Questionnaires & Surveys</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold">Questionnaires & Surveys</h1>
           <p className="text-muted-foreground mt-1">Create and analyze alumni feedback</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+        <Button onClick={() => setShowCreateDialog(true)} className="w-full sm:w-auto gap-2">
           <Plus className="h-4 w-4" />
           Create Questionnaire
         </Button>
@@ -294,7 +294,7 @@ export default function SurveysPage() {
                     {q.is_required && <Badge variant="destructive">Required</Badge>}
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">{q.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span>Target: {q.target_audience}</span>
                     <span>Responses: {q.response_count || 0}</span>
                     <span>Created: {new Date(q.created_at).toLocaleDateString()}</span>
@@ -320,7 +320,7 @@ export default function SurveysPage() {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Questionnaire</DialogTitle>
             <DialogDescription>Design a survey to gather feedback from alumni</DialogDescription>
@@ -484,7 +484,7 @@ export default function SurveysPage() {
 
       {/* Analytics Dialog */}
       <Dialog open={showAnalyticsDialog} onOpenChange={setShowAnalyticsDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedQuestionnaire?.title}</DialogTitle>
             <DialogDescription>Response Analytics</DialogDescription>
