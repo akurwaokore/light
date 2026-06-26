@@ -1,36 +1,61 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { mockCampaigns } from "@/src/lib/mock-data"
-import { Heart, Target, Calendar, Users } from "lucide-react"
+import { Heart, Target, TrendingUp, Loader2 } from "lucide-react"
+
+interface Campaign {
+  id: string
+  title: string
+  description: string
+  goal: number
+  raised: number
+  imageURL: string | null
+}
 
 export default function GivingPage() {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null)
   const [donationAmount, setDonationAmount] = useState("")
   const [customAmount, setCustomAmount] = useState("")
 
   const presetAmounts = ["500", "1000", "2500", "5000", "10000"]
 
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const res = await fetch("/api/donations")
+        if (res.ok) {
+          const data = await res.json()
+          setCampaigns(data || [])
+        }
+      } catch {
+        // Surface nothing destructive; empty state handles failures.
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchCampaigns()
+  }, [])
+
   const formatCurrency = (amount: number) => {
     return `KES ${amount.toLocaleString()}`
   }
 
   const calculateProgress = (raised: number, goal: number) => {
+    if (!goal) return 0
     return Math.min((raised / goal) * 100, 100)
   }
 
-  const getDaysRemaining = (endDate: string) => {
-    const end = new Date(endDate)
-    const now = new Date()
-    const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    return diff > 0 ? diff : 0
-  }
+  const totalRaised = campaigns.reduce((sum, c) => sum + (c.raised || 0), 0)
+  const totalGoal = campaigns.reduce((sum, c) => sum + (c.goal || 0), 0)
+  const overallProgress = totalGoal > 0 ? Math.round((totalRaised / totalGoal) * 100) : 0
 
   return (
     <div className="container mx-auto space-y-8 p-6">
@@ -40,26 +65,15 @@ export default function GivingPage() {
       </div>
 
       {/* Impact Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="flex items-center gap-4 p-4">
             <div className="rounded-full bg-primary/10 p-3">
               <Heart className="h-5 w-5 text-primary" />
             </div>
-            <div>
-              <p className="text-2xl font-bold">KES 5.4M</p>
+            <div className="min-w-0">
+              <p className="truncate text-2xl font-bold">{formatCurrency(totalRaised)}</p>
               <p className="text-sm text-muted-foreground">Total Raised</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-accent/10 p-3">
-              <Users className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">1,234</p>
-              <p className="text-sm text-muted-foreground">Donors</p>
             </div>
           </CardContent>
         </Card>
@@ -68,74 +82,89 @@ export default function GivingPage() {
             <div className="rounded-full bg-green-100 p-3">
               <Target className="h-5 w-5 text-green-600" />
             </div>
-            <div>
-              <p className="text-2xl font-bold">12</p>
-              <p className="text-sm text-muted-foreground">Campaigns Funded</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-bold">{campaigns.length}</p>
+              <p className="text-sm text-muted-foreground">Active Campaigns</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
             <div className="rounded-full bg-blue-100 p-3">
-              <Calendar className="h-5 w-5 text-blue-600" />
+              <TrendingUp className="h-5 w-5 text-blue-600" />
             </div>
-            <div>
-              <p className="text-2xl font-bold">156</p>
-              <p className="text-sm text-muted-foreground">Students Helped</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-bold">{overallProgress}%</p>
+              <p className="text-sm text-muted-foreground">Overall Funded</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Campaigns */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {mockCampaigns.map((campaign) => {
-          const progress = calculateProgress(campaign.raised, campaign.goal)
-          const daysRemaining = getDaysRemaining(campaign.endDate)
+      {isLoading ? (
+        <div className="py-12 text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading campaigns...</p>
+        </div>
+      ) : campaigns.length === 0 ? (
+        <Card className="py-12">
+          <CardContent className="flex flex-col items-center justify-center text-center">
+            <Heart className="h-12 w-12 text-muted-foreground/50" />
+            <h3 className="mt-4 text-lg font-semibold">No active campaigns</h3>
+            <p className="max-w-xs text-muted-foreground">
+              There are no fundraising campaigns running right now. Check back soon.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {campaigns.map((campaign) => {
+            const progress = calculateProgress(campaign.raised, campaign.goal)
 
-          return (
-            <Card key={campaign.id} className="overflow-hidden">
-              {campaign.imageURL && (
-                <div className="aspect-video bg-muted">
-                  <img
-                    src={campaign.imageURL || "/placeholder.svg"}
-                    alt={campaign.title}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle className="font-serif">{campaign.title}</CardTitle>
-                <CardDescription>{campaign.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{formatCurrency(campaign.raised)} raised</span>
-                    <span className="text-muted-foreground">of {formatCurrency(campaign.goal)}</span>
+            return (
+              <Card key={campaign.id} className="overflow-hidden">
+                {campaign.imageURL && (
+                  <div className="aspect-video bg-muted">
+                    <img
+                      src={campaign.imageURL || "/placeholder.svg"}
+                      alt={campaign.title}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
-                  <Progress value={progress} className="h-2" />
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>{Math.round(progress)}% funded</span>
-                    <span>{daysRemaining} days left</span>
+                )}
+                <CardHeader>
+                  <CardTitle className="font-serif">{campaign.title}</CardTitle>
+                  <CardDescription>{campaign.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="font-medium">{formatCurrency(campaign.raised)} raised</span>
+                      <span className="text-right text-muted-foreground">of {formatCurrency(campaign.goal)}</span>
+                    </div>
+                    <Progress value={progress} className="h-2" />
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>{Math.round(progress)}% funded</span>
+                    </div>
                   </div>
-                </div>
 
-                <Button className="w-full" onClick={() => setSelectedCampaign(campaign.id)}>
-                  Donate Now
-                </Button>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+                  <Button className="w-full" onClick={() => setSelectedCampaign(campaign.id)}>
+                    Donate Now
+                  </Button>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
       {/* Donation Form */}
       {selectedCampaign && (
         <Card className="mx-auto max-w-md">
           <CardHeader>
             <CardTitle className="font-serif">Make a Donation</CardTitle>
-            <CardDescription>{mockCampaigns.find((c) => c.id === selectedCampaign)?.title}</CardDescription>
+            <CardDescription>{campaigns.find((c) => c.id === selectedCampaign)?.title}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">

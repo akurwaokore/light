@@ -80,9 +80,32 @@ export default function NewsletterManagement() {
       if (response.ok) {
         setNewsletters(newsletters.filter((n) => n.id !== id))
         toast.success("Newsletter removed")
+      } else {
+        toast.error("Delete failed")
       }
     } catch (error) {
       toast.error("Delete failed")
+    }
+  }
+
+  const handleSend = async (id: string) => {
+    if (!confirm("Send this newsletter to all active subscribers?")) return
+    try {
+      const response = await fetch(`/api/admin/newsletter/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send" }),
+      })
+      if (response.ok) {
+        const updated = await response.json()
+        setNewsletters(newsletters.map((n) => (n.id === id ? updated : n)))
+        toast.success("Newsletter sent")
+        fetchData()
+      } else {
+        toast.error("Send failed")
+      }
+    } catch (error) {
+      toast.error("Send failed")
     }
   }
 
@@ -232,6 +255,18 @@ export default function NewsletterManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          {newsletter.status !== "sent" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleSend(newsletter.id)}
+                              className="gap-1 text-primary hover:bg-primary/10"
+                              title="Send to subscribers"
+                            >
+                              <Send className="h-4 w-4" />
+                              Send
+                            </Button>
+                          )}
                           {newsletter.status === "sent" && (
                             <Button size="icon" variant="ghost" title="View Engagement">
                               <BarChart3 className="h-4 w-4 text-blue-500" />

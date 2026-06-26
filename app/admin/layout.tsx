@@ -55,9 +55,9 @@ export default async function AdminLayout({
   return (
     <SidebarProvider>
       <AdminSidebar />
-      <SidebarInset>
+      <SidebarInset className="min-w-0 overflow-x-hidden">
         <AdminHeader />
-        <main className="flex-1 p-6 bg-muted/30">{children}</main>
+        <main className="flex-1 p-6 bg-muted/30 overflow-x-hidden">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )

@@ -224,8 +224,8 @@ export default function DonationsManagement() {
             />
           </div>
           
-          <div className="rounded-md border overflow-hidden">
-            <Table>
+          <div className="rounded-md border overflow-x-auto">
+            <Table className="min-w-[720px]">
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Campaign Name</TableHead>

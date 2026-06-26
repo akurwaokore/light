@@ -124,7 +124,7 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ id: st
                       <div className="flex gap-2">
                         <CvViewButton cvId={(app as any).cv_id} cvUrl={app.cv_url} />
                         <Button asChild size="sm">
-                          <Link href={`/profile/${app.applicant.id}`}>
+                          <Link href={`/members/${app.applicant.id}`}>
                             View Profile
                           </Link>
                         </Button>

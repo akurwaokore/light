@@ -68,30 +68,41 @@ export async function PATCH(req: NextRequest) {
       if (error) throw error
       result = data
     } else {
-      // Get landing page ID
+      // Get landing page ID (only present in the fuller cms_pages schema).
       const { data: landingPage } = await supabase
         .from("cms_pages")
         .select("id")
         .eq("slug", "landing")
-        .single()
+        .maybeSingle()
 
-      if (!landingPage) throw new Error("Landing page not found")
-
-      const { data, error } = await supabase
+      // Try the full insert first (schema with page_id / section_type).
+      const fullInsert = await supabase
         .from("cms_sections")
         .insert({
           section_name: name,
           content,
-          page_id: landingPage.id,
+          page_id: landingPage?.id ?? null,
           section_type: name,
           section_order: 0,
           updated_at: new Date().toISOString()
         })
         .select()
         .single()
-      
-      if (error) throw error
-      result = data
+
+      if (fullInsert.error) {
+        // Fall back to a minimal insert so saves still work on the leaner
+        // schema (section_name + content only, no cms_pages dependency).
+        const minimalInsert = await supabase
+          .from("cms_sections")
+          .insert({ section_name: name, content })
+          .select()
+          .single()
+
+        if (minimalInsert.error) throw minimalInsert.error
+        result = minimalInsert.data
+      } else {
+        result = fullInsert.data
+      }
     }
 
     return NextResponse.json(result)
