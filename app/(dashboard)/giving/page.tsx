@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Heart, Target, TrendingUp, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface Campaign {
   id: string
@@ -24,8 +25,43 @@ export default function GivingPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null)
   const [donationAmount, setDonationAmount] = useState("")
   const [customAmount, setCustomAmount] = useState("")
+  const [phone, setPhone] = useState("")
+  const [isDonating, setIsDonating] = useState(false)
 
   const presetAmounts = ["500", "1000", "2500", "5000", "10000"]
+
+  const handleDonate = async () => {
+    const amount = Number.parseInt(donationAmount || customAmount)
+    if (!amount || amount < 1) {
+      toast.error("Select or enter a valid amount")
+      return
+    }
+    if (!phone.trim()) {
+      toast.error("Enter your M-Pesa phone number")
+      return
+    }
+    setIsDonating(true)
+    try {
+      const res = await fetch("/api/donations/mpesa/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, phone, campaignId: selectedCampaign }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(data.message || "Check your phone to authorise the M-Pesa payment")
+        setDonationAmount("")
+        setCustomAmount("")
+        setPhone("")
+      } else {
+        toast.error(data.error || "Could not start the payment")
+      }
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
+      setIsDonating(false)
+    }
+  }
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -208,13 +244,34 @@ export default function GivingPage() {
               />
             </div>
 
-            <Button className="w-full" disabled={!donationAmount && !customAmount}>
-              <Heart className="mr-2 h-4 w-4" />
+            <div className="space-y-2">
+              <Label htmlFor="phone">M-Pesa Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="e.g. 0712345678"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+
+            <Button
+              className="w-full"
+              disabled={(!donationAmount && !customAmount) || isDonating}
+              onClick={handleDonate}
+            >
+              {isDonating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Heart className="mr-2 h-4 w-4" />
+              )}
               Donate KES{" "}
               {(donationAmount || customAmount ? Number.parseInt(donationAmount || customAmount) : 0).toLocaleString()}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground">Payments are processed securely via M-Pesa</p>
+            <p className="text-center text-sm text-muted-foreground">
+              You'll receive an M-Pesa prompt on your phone to authorise the payment.
+            </p>
           </CardContent>
         </Card>
       )}

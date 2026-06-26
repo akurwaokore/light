@@ -269,7 +269,7 @@ export function ProductFormComponent({ productType, onSuccess, editMode = false,
 
               {/* Image Preview */}
               {images.length > 0 && (
-                <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
                   {images.map((url, index) => (
                     <div key={index} className="group relative aspect-square">
                       <img

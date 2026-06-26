@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,72 +9,64 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sparkles, Send, Clock, Mail, Eye, Edit, Trash2, FileText, Wand2, Loader2 } from "lucide-react"
+import { Sparkles, Send, Clock, Mail, Edit, Trash2, FileText, Wand2, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
-const pastNewsletters = [
-  {
-    id: 1,
-    title: "November Alumni Digest",
-    sentDate: "Nov 15, 2024",
-    recipients: 2850,
-    openRate: "68%",
-    status: "sent",
-  },
-  {
-    id: 2,
-    title: "Career Spotlight: Tech Industry",
-    sentDate: "Nov 1, 2024",
-    recipients: 2820,
-    openRate: "72%",
-    status: "sent",
-  },
-  {
-    id: 3,
-    title: "October Events Recap",
-    sentDate: "Oct 28, 2024",
-    recipients: 2780,
-    openRate: "65%",
-    status: "sent",
-  },
-  {
-    id: 4,
-    title: "Annual Gala Announcement",
-    sentDate: "Oct 15, 2024",
-    recipients: 2750,
-    openRate: "78%",
-    status: "sent",
-  },
-]
-
-const scheduledNewsletters = [
-  {
-    id: 1,
-    title: "December Holiday Edition",
-    scheduledDate: "Dec 1, 2024",
-    recipients: 2900,
-    status: "scheduled",
-  },
-  {
-    id: 2,
-    title: "Year in Review 2024",
-    scheduledDate: "Dec 20, 2024",
-    recipients: 2900,
-    status: "draft",
-  },
-]
+interface Newsletter {
+  id: string
+  title: string
+  subject: string | null
+  content: string | null
+  status: string
+  recipients: number | null
+  sent_at: string | null
+  created_at: string
+}
 
 export default function NewsletterPage() {
+  const [title, setTitle] = useState("")
   const [subject, setSubject] = useState("")
   const [content, setContent] = useState("")
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [tone, setTone] = useState("professional")
   const [prompt, setPrompt] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isSending, setIsSending] = useState(false)
+
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const drafts = newsletters.filter((n) => n.status !== "sent")
+  const sent = newsletters.filter((n) => n.status === "sent")
+
+  const fetchNewsletters = async () => {
+    try {
+      const res = await fetch("/api/admin/newsletter")
+      if (res.ok) {
+        const data = await res.json()
+        setNewsletters(data.newsletters || [])
+      } else if (res.status === 401 || res.status === 403) {
+        toast.error("You need admin access to manage newsletters")
+      }
+    } catch {
+      // non-fatal; tabs show empty states
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchNewsletters()
+  }, [])
 
   const handleAIGenerate = async () => {
     if (!prompt.trim()) return
     setIsGenerating(true)
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setContent(`Dear Light Alumni Community,
+    // Lightweight client-side composer (no external AI dependency).
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    const greeting =
+      tone === "casual" || tone === "friendly" ? "Hi Light Alumni," : "Dear Light Alumni Community,"
+    setContent(`${greeting}
 
 We hope this message finds you well and thriving in your endeavors!
 
@@ -86,14 +78,129 @@ Stay connected, stay inspired!
 
 Warm regards,
 Light Alumni Connect Team`)
+    if (!subject) setSubject(prompt.slice(0, 80))
     setIsGenerating(false)
+  }
+
+  const persistDraft = async (): Promise<Newsletter | null> => {
+    const payload = {
+      title: title.trim() || subject.trim() || "Untitled newsletter",
+      subject: subject.trim(),
+      content,
+      status: "draft",
+    }
+    const res = await fetch("/api/admin/newsletter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "")
+      throw new Error(msg || "Failed to save newsletter")
+    }
+    return res.json()
+  }
+
+  const resetForm = () => {
+    setTitle("")
+    setSubject("")
+    setContent("")
+    setPrompt("")
+  }
+
+  const handleSaveDraft = async () => {
+    if (!subject.trim() && !title.trim()) {
+      toast.error("Add a subject or title first")
+      return
+    }
+    if (!content.trim()) {
+      toast.error("Write some content first")
+      return
+    }
+    setIsSaving(true)
+    try {
+      await persistDraft()
+      toast.success("Draft saved")
+      resetForm()
+      fetchNewsletters()
+    } catch (e: any) {
+      toast.error(e.message || "Could not save draft")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSendNow = async () => {
+    if (!subject.trim() && !title.trim()) {
+      toast.error("Add a subject or title first")
+      return
+    }
+    if (!content.trim()) {
+      toast.error("Write some content first")
+      return
+    }
+    if (!confirm("Send this newsletter to all active subscribers?")) return
+    setIsSending(true)
+    try {
+      const created = await persistDraft()
+      if (!created?.id) throw new Error("Could not create newsletter")
+      const res = await fetch(`/api/admin/newsletter/${created.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send" }),
+      })
+      if (!res.ok) throw new Error(await res.text().catch(() => "Send failed"))
+      toast.success("Newsletter sent")
+      resetForm()
+      fetchNewsletters()
+    } catch (e: any) {
+      toast.error(e.message || "Could not send newsletter")
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Permanently delete this newsletter?")) return
+    try {
+      const res = await fetch(`/api/admin/newsletter/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        setNewsletters((prev) => prev.filter((n) => n.id !== id))
+        toast.success("Newsletter removed")
+      } else {
+        toast.error("Delete failed")
+      }
+    } catch {
+      toast.error("Delete failed")
+    }
+  }
+
+  const handleSend = async (id: string) => {
+    if (!confirm("Send this newsletter to all active subscribers?")) return
+    try {
+      const res = await fetch(`/api/admin/newsletter/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send" }),
+      })
+      if (res.ok) {
+        toast.success("Newsletter sent")
+        fetchNewsletters()
+      } else {
+        toast.error("Send failed")
+      }
+    } catch {
+      toast.error("Send failed")
+    }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-bold">Newsletter</h1>
-        <p className="text-muted-foreground">Create and manage newsletters with AI-powered assistance</p>
+        <h1 className="font-heading text-2xl font-bold sm:text-3xl">Newsletter</h1>
+        <p className="text-sm text-muted-foreground sm:text-base">
+          Create and send newsletters to the alumni community
+        </p>
       </div>
 
       <Tabs defaultValue="compose" className="space-y-6">
@@ -102,9 +209,9 @@ Light Alumni Connect Team`)
             <Edit className="mr-2 h-4 w-4" />
             Compose
           </TabsTrigger>
-          <TabsTrigger value="scheduled">
+          <TabsTrigger value="drafts">
             <Clock className="mr-2 h-4 w-4" />
-            Scheduled
+            Drafts
           </TabsTrigger>
           <TabsTrigger value="sent">
             <Mail className="mr-2 h-4 w-4" />
@@ -119,15 +226,15 @@ Light Alumni Connect Team`)
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  AI Writing Assistant
+                  Writing Assistant
                 </CardTitle>
-                <CardDescription>Generate newsletter content using AI</CardDescription>
+                <CardDescription>Generate a starting draft from a short brief</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>What would you like to write about?</Label>
                   <Textarea
-                    placeholder="e.g., Announce the upcoming annual reunion event with details about networking opportunities, guest speakers, and how to register..."
+                    placeholder="e.g., Announce the upcoming annual reunion with networking, guest speakers, and how to register..."
                     className="min-h-[120px]"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
@@ -135,7 +242,7 @@ Light Alumni Connect Team`)
                 </div>
                 <div className="space-y-2">
                   <Label>Tone</Label>
-                  <Select defaultValue="professional">
+                  <Select value={tone} onValueChange={setTone}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select tone" />
                     </SelectTrigger>
@@ -171,100 +278,92 @@ Light Alumni Connect Team`)
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="title">Internal Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="e.g. March 2026 Alumni Update"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="subject">Subject Line</Label>
                   <Input
                     id="subject"
-                    placeholder="Enter email subject..."
+                    placeholder="The subject alumni will see in their inbox..."
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="recipients">Recipients</Label>
-                  <Select defaultValue="all">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select recipients" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Members (2,900)</SelectItem>
-                      <SelectItem value="premium">Premium Members (1,250)</SelectItem>
-                      <SelectItem value="active">Active Members (2,450)</SelectItem>
-                      <SelectItem value="batch-2020">Class of 2020+ (980)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="content">Content</Label>
                   <Textarea
                     id="content"
-                    placeholder="Write your newsletter content here or use AI to generate..."
+                    placeholder="Write your newsletter content here or use the assistant to generate..."
                     className="min-h-[300px]"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                   />
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <div className="flex gap-2">
-                  <Button variant="outline">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Save Draft
-                  </Button>
-                  <Button variant="outline">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Preview
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline">
-                    <Clock className="mr-2 h-4 w-4" />
-                    Schedule
-                  </Button>
-                  <Button>
-                    <Send className="mr-2 h-4 w-4" />
-                    Send Now
-                  </Button>
-                </div>
+              <CardFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <Button variant="outline" onClick={handleSaveDraft} disabled={isSaving || isSending}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  Save Draft
+                </Button>
+                <Button onClick={handleSendNow} disabled={isSaving || isSending}>
+                  {isSending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Send Now
+                </Button>
               </CardFooter>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="scheduled">
+        <TabsContent value="drafts">
           <Card>
             <CardHeader>
-              <CardTitle>Scheduled Newsletters</CardTitle>
-              <CardDescription>Upcoming newsletters to be sent</CardDescription>
+              <CardTitle>Drafts</CardTitle>
+              <CardDescription>Newsletters not yet sent</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {scheduledNewsletters.map((newsletter) => (
-                  <div key={newsletter.id} className="flex items-center justify-between p-4 rounded-lg border">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                        <Mail className="h-5 w-5" />
+              {isLoading ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : drafts.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No drafts yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {drafts.map((n) => (
+                    <div
+                      key={n.id}
+                      className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                          <Mail className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="truncate font-medium">{n.title}</h3>
+                          <p className="truncate text-sm text-muted-foreground">{n.subject || "No subject"}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium">{newsletter.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Scheduled for {newsletter.scheduledDate} | {newsletter.recipients} recipients
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="capitalize">
+                          {n.status}
+                        </Badge>
+                        <Button size="sm" variant="ghost" className="gap-1 text-primary" onClick={() => handleSend(n.id)}>
+                          <Send className="h-4 w-4" /> Send
+                        </Button>
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDelete(n.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={newsletter.status === "scheduled" ? "default" : "secondary"}>
-                        {newsletter.status}
-                      </Badge>
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -276,32 +375,36 @@ Light Alumni Connect Team`)
               <CardDescription>History of sent newsletters</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {pastNewsletters.map((newsletter) => (
-                  <div key={newsletter.id} className="flex items-center justify-between p-4 rounded-lg border">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                        <Mail className="h-5 w-5" />
+              {isLoading ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : sent.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No newsletters sent yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {sent.map((n) => (
+                    <div
+                      key={n.id}
+                      className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                          <Mail className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="truncate font-medium">{n.title}</h3>
+                          <p className="truncate text-sm text-muted-foreground">
+                            Sent {n.sent_at ? new Date(n.sent_at).toLocaleDateString() : "—"} · {n.recipients || 0}{" "}
+                            recipients
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium">{newsletter.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Sent {newsletter.sentDate} | {newsletter.recipients} recipients
-                        </p>
-                      </div>
+                      <Badge>{n.status}</Badge>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{newsletter.openRate}</p>
-                        <p className="text-xs text-muted-foreground">Open rate</p>
-                      </div>
-                      <Button variant="ghost" size="icon">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

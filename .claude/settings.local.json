@@ -108,7 +108,9 @@
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT to_regclass\\('public.saved_posts'\\) AS saved_posts, to_regclass\\('public.comment_reactions'\\) AS comment_reactions;\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT extname FROM pg_extension WHERE extname='ltree';\")",
       "Bash(xargs ls -la)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(awk '/CREATE TABLE.*products/,/\\\\\\);/' scripts/create-tables-v1.sql)",
+      "Bash(awk '/CREATE TABLE.*products/,/\\\\\\);/' scripts/fix-marketplace-products-and-services.sql)"
     ]
   }
 }

@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const { recipientId } = await request.json()
+    const { recipientId, productId } = await request.json()
     if (!recipientId) return NextResponse.json({ error: "Recipient ID required" }, { status: 400 })
 
     if (user.id === recipientId) {
@@ -38,12 +38,27 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (!friendship) {
-      const admin = await checkAdminAccess()
-      if (!admin.authorized) {
-        return NextResponse.json(
-          { error: "You can only message people you are connected with." },
-          { status: 403 },
-        )
+      // Exception: a buyer may contact a seller about a specific listing even
+      // when they aren't connected, as long as the recipient owns that listing.
+      let isListingInquiry = false
+      if (productId) {
+        const { data: listing } = await supabase
+          .from("products")
+          .select("id")
+          .eq("id", productId)
+          .eq("seller_id", recipientId)
+          .maybeSingle()
+        isListingInquiry = !!listing
+      }
+
+      if (!isListingInquiry) {
+        const admin = await checkAdminAccess()
+        if (!admin.authorized) {
+          return NextResponse.json(
+            { error: "You can only message people you are connected with." },
+            { status: 403 },
+          )
+        }
       }
     }
 

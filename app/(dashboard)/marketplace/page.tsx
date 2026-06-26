@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingBag, Search, Plus, ImageIcon, User, Clock, Package, Share2, ShieldCheck, Trophy } from "lucide-react"
+import { ShoppingBag, Search, Plus, ImageIcon, User, Clock, Package, Share2, ShieldCheck, Trophy, Heart } from "lucide-react"
 import { ProductFormComponent } from "@/components/marketplace/product-form"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { CheckoutDialog } from "@/components/marketplace/checkout-dialog"
@@ -164,6 +165,24 @@ export default function MarketplacePage() {
     return `${targetCurrency.symbol} ${convertedPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
   }
 
+  const handleShowInterest = async (product: any) => {
+    try {
+      const res = await fetch(`/api/marketplace/products/${product.id}/interest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        toast.success("The seller has been notified of your interest")
+      } else {
+        toast.error(data.error || "Could not register interest")
+      }
+    } catch {
+      toast.error("Something went wrong")
+    }
+  }
+
   const handleShareToFeed = async (product: any) => {
     try {
       const response = await fetch("/api/posts", {
@@ -183,12 +202,12 @@ export default function MarketplacePage() {
 
   return (
     <div className="container mx-auto space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Alumni Marketplace</h1>
-          <p className="mt-1 text-muted-foreground">Buy and sell with the alumni community</p>
+          <h1 className="font-serif text-2xl font-bold sm:text-3xl">Alumni Marketplace</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">Buy and sell with the alumni community</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <CartSheet />
           <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
             <DialogTrigger asChild>
@@ -303,22 +322,29 @@ export default function MarketplacePage() {
             const imageUrl = getImageUrl(product)
             return (
               <Card key={product.id} className="overflow-hidden transition-all hover:shadow-lg">
-                <div className="relative aspect-square bg-muted">
-                  {imageUrl ? (
-                    <Image
-                      src={imageUrl}
-                      alt={product.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
-                    </div>
-                  )}
-                </div>
+                <Link href={`/marketplace/${product.id}`} className="block">
+                  <div className="relative aspect-square bg-muted">
+                    {imageUrl ? (
+                      <Image
+                        src={imageUrl}
+                        alt={product.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground/50" />
+                      </div>
+                    )}
+                    {Array.isArray(product.image_urls) && product.image_urls.length > 1 && (
+                      <span className="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-xs text-white">
+                        <ImageIcon className="h-3 w-3" /> {product.image_urls.length}
+                      </span>
+                    )}
+                  </div>
+                </Link>
                 <CardContent className="p-4">
                   <Badge variant="secondary" className="mb-2">
                     {getCategoryLabel(product.category)}
@@ -328,7 +354,9 @@ export default function MarketplacePage() {
                       <Package className="mr-1 h-3 w-3" /> Service
                     </Badge>
                   )}
-                  <h3 className="font-semibold line-clamp-1">{product.title}</h3>
+                  <Link href={`/marketplace/${product.id}`}>
+                    <h3 className="font-semibold line-clamp-1 hover:text-primary">{product.title}</h3>
+                  </Link>
                   <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{product.description}</p>
                   <p className="mt-3 font-serif text-xl font-bold text-primary">
                     {formatPrice(product.price, product.currency || "USD")}
@@ -351,6 +379,9 @@ export default function MarketplacePage() {
                     >
                       <ShoppingBag className="mr-2 h-4 w-4" />
                       {product.quantity === 0 ? "Out of stock" : "Add to Cart"}
+                    </Button>
+                    <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShowInterest(product)} title="Show interest — notify the seller">
+                      <Heart className="h-4 w-4" />
                     </Button>
                     <Button variant="outline" size="icon" className="rounded-xl" disabled={product.quantity === 0} onClick={() => handleRedeem(product)} title="Redeem with loyalty points">
                       <Trophy className="h-4 w-4" />
