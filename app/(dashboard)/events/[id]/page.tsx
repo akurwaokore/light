@@ -122,7 +122,7 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="container mx-auto space-y-6 p-4 md:p-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -146,7 +146,7 @@ export default function EventDetailPage() {
                   <Badge variant="outline">{event.event_type}</Badge>
                   {event.is_virtual && <Badge variant="secondary">Virtual</Badge>}
                 </div>
-                <h1 className="text-3xl font-bold font-serif">{event.title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold font-serif">{event.title}</h1>
               </div>
 
               <div className="flex flex-wrap gap-6 text-muted-foreground">
@@ -185,9 +185,9 @@ export default function EventDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between gap-2 min-w-0 text-sm">
                 <span className="text-muted-foreground">Availability</span>
-                <span className="font-medium">
+                <span className="font-medium truncate">
                   {event.max_attendees ? `Up to ${event.max_attendees} guests` : "Unlimited"}
                 </span>
               </div>

@@ -140,15 +140,15 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto space-y-6 p-4 md:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Events</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">Events</h1>
           <p className="mt-1 text-muted-foreground">Discover and register for upcoming alumni events</p>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Create Event
             </Button>
@@ -208,8 +208,8 @@ export default function EventsPage() {
                   <div className="space-y-4">
                     {selectedDateEvents.map((event) => (
                       <div key={event.id} className="rounded-lg border border-border p-4 transition-colors hover:border-primary/50">
-                        <div className="flex items-start justify-between gap-4">
-                          <Link href={`/events/${event.id}`} className="flex-1 cursor-pointer">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                          <Link href={`/events/${event.id}`} className="flex-1 min-w-0 cursor-pointer">
                             <div className="flex items-center gap-2">
                               <h4 className="font-semibold group-hover:text-primary transition-colors">{event.title}</h4>
                               <Badge variant="secondary">{event.event_type}</Badge>
@@ -231,6 +231,7 @@ export default function EventsPage() {
                             </div>
                           </Link>
                           <Button
+                            className="w-full sm:w-auto"
                             variant={registeredEvents.includes(event.id) ? "outline" : "default"}
                             onClick={(e) => {
                               e.preventDefault()
@@ -281,10 +282,10 @@ export default function EventsPage() {
                         className="h-20 w-28 rounded-lg object-cover"
                       />
                     )}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h4 className="font-semibold">{event.title}</h4>
+                        <div className="min-w-0">
+                          <h4 className="font-semibold truncate">{event.title}</h4>
                           <p className="text-sm text-muted-foreground">{formatDate(event.start_date)}</p>
                         </div>
                         <div className="flex gap-2">

@@ -165,7 +165,7 @@ export default function DashboardPage() {
       {/* Header Section */}
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
-          <h1 className="font-serif text-4xl font-bold tracking-tight">
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight">
             Welcome, <span className="text-primary">{firstName}</span>!
           </h1>
           <p className="text-muted-foreground text-lg">
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-lg shadow-amber-600/20" asChild>
+                <Button className="w-full md:w-auto bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-lg shadow-amber-600/20" asChild>
                   <Link href="/leaderboard">View Leaderboard</Link>
                 </Button>
               </div>

@@ -76,7 +76,7 @@ export default function MyListingsPage() {
           <h1 className="font-serif text-2xl md:text-3xl font-bold">My Job Listings</h1>
           <p className="mt-1 text-sm md:text-base text-muted-foreground">Manage your posted jobs and view applicants</p>
         </div>
-        <Button asChild>
+        <Button asChild className="w-full md:w-auto">
           <Link href="/careers">
             <Plus className="mr-2 h-4 w-4" />
             Post New Job
@@ -102,8 +102,8 @@ export default function MyListingsPage() {
             <Card key={job.id} className="transition-all hover:shadow-md">
               <CardContent className="p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
+                  <div className="space-y-2 min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
                       <h3 className="font-serif text-xl font-semibold">{job.title}</h3>
                       {getStatusBadge(job.status)}
                     </div>

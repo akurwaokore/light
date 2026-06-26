@@ -279,7 +279,7 @@ export default function CareersPage() {
       </div>
 
       <Tabs defaultValue="jobs" className="space-y-6" key="careers-tabs">
-        <TabsList>
+        <TabsList className="w-full flex-wrap justify-start overflow-x-auto">
           <TabsTrigger value="jobs">
             <Briefcase className="mr-2 h-4 w-4" />
             Job Board
@@ -388,9 +388,9 @@ export default function CareersPage() {
                         )}
                       </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <SaveJobButton jobId={job.id} />
-                        <Button onClick={() => setSelectedJobToApply(job)}>Apply Now</Button>
+                        <Button className="w-full sm:w-auto" onClick={() => setSelectedJobToApply(job)}>Apply Now</Button>
                       </div>
                     </div>
                   </CardContent>

@@ -187,7 +187,7 @@ export default function MemberProfilePage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="container mx-auto space-y-6 p-4 md:p-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -198,7 +198,7 @@ export default function MemberProfilePage() {
       <Card className="overflow-hidden">
         <div className="h-32 bg-gradient-to-r from-primary/20 to-primary/10" />
         <CardContent className="relative pt-0">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-end -mt-12 mb-6">
+          <div className="flex flex-col items-center text-center md:flex-row md:items-end md:text-left gap-6 -mt-12 mb-6">
             <Avatar className="h-32 w-32 border-4 border-background shadow-xl">
               <AvatarImage src={profile.photo_url || "/placeholder.svg"} alt={profile.display_name} />
               <AvatarFallback className="text-4xl">
@@ -208,9 +208,9 @@ export default function MemberProfilePage() {
                   .join("") || "U"}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl font-bold">{profile.display_name}</h1>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-bold">{profile.display_name}</h1>
                 {profile.is_restricted && (
                   <Badge variant="secondary" className="gap-1">
                     <Lock className="h-3 w-3" />
@@ -223,7 +223,7 @@ export default function MemberProfilePage() {
               </p>
             </div>
             {!profile.is_restricted && (
-              <Button onClick={handleStartChat}>
+              <Button className="w-full md:w-auto" onClick={handleStartChat}>
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Message
               </Button>
@@ -261,17 +261,17 @@ export default function MemberProfilePage() {
             </div>
           ) : (
             <Tabs defaultValue="about" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-8">
-                <TabsTrigger value="about" className="gap-2">
+              <TabsList className="flex w-full overflow-x-auto sm:grid sm:grid-cols-4 mb-8">
+                <TabsTrigger value="about" className="gap-2 shrink-0">
                   <UserPlus className="h-4 w-4" /> About
                 </TabsTrigger>
-                <TabsTrigger value="posts" className="gap-2">
+                <TabsTrigger value="posts" className="gap-2 shrink-0">
                   <FileText className="h-4 w-4" /> Postings
                 </TabsTrigger>
-                <TabsTrigger value="media" className="gap-2">
+                <TabsTrigger value="media" className="gap-2 shrink-0">
                   <LayoutGrid className="h-4 w-4" /> Gallery
                 </TabsTrigger>
-                <TabsTrigger value="friends" className="gap-2">
+                <TabsTrigger value="friends" className="gap-2 shrink-0">
                   <Users className="h-4 w-4" /> Friends
                 </TabsTrigger>
               </TabsList>

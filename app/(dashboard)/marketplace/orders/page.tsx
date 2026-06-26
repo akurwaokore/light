@@ -28,8 +28,8 @@ export default function OrdersPage() {
   }, [])
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-6 p-6">
-      <h1 className="font-serif text-3xl font-bold">My Orders</h1>
+    <div className="container mx-auto max-w-3xl space-y-6 p-4 md:p-6">
+      <h1 className="font-serif text-2xl font-bold sm:text-3xl">My Orders</h1>
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : orders.length === 0 ? (
@@ -42,9 +42,9 @@ export default function OrdersPage() {
           {orders.map((o) => (
             <Link key={o.id} href={`/marketplace/orders/${o.id}`}>
               <Card className="transition-all hover:shadow-md">
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium">
+                <CardContent className="flex items-center justify-between gap-2 p-4">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
                       {o.items?.length || 0} item{(o.items?.length || 0) === 1 ? "" : "s"} ·{" "}
                       {o.currency} {Number(o.total).toLocaleString()}
                     </p>
@@ -52,7 +52,7 @@ export default function OrdersPage() {
                       {new Date(o.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <Badge className={statusColor[o.status] || ""}>{o.status.replace("_", " ")}</Badge>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>

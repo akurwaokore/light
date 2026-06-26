@@ -82,7 +82,7 @@ export default function ApplicationDetailsPage() {
 
   if (error || !application) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-4 md:p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || "Application not found"}</AlertDescription>
@@ -109,8 +109,8 @@ export default function ApplicationDetailsPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader className="flex flex-row items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-4 min-w-0">
                 <div className="h-16 w-16 rounded-lg border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                   {application.job?.logo_url ? (
                     <img 
@@ -123,9 +123,9 @@ export default function ApplicationDetailsPage() {
                     <Building2 className="h-8 w-8 text-muted-foreground" />
                   )}
                 </div>
-                <div>
-                  <h1 className="font-serif text-2xl font-bold">{application.job?.title}</h1>
-                  <p className="text-lg text-muted-foreground">{application.job?.company}</p>
+                <div className="min-w-0">
+                  <h1 className="font-serif text-2xl font-bold break-words">{application.job?.title}</h1>
+                  <p className="text-lg text-muted-foreground truncate">{application.job?.company}</p>
                 </div>
               </div>
               <Badge className={`${statusColors[application.status] || "bg-gray-100 text-gray-800"} border capitalize px-4 py-1 text-sm`}>

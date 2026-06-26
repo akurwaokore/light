@@ -71,14 +71,14 @@ export default function MyListingsPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-8 p-6">
+    <div className="container mx-auto space-y-8 p-4 md:p-6">
       <div>
-        <h1 className="font-serif text-3xl font-bold">My Marketplace & Jobs</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">My Marketplace & Jobs</h1>
         <p className="mt-1 text-muted-foreground">Manage your products, services, and job openings</p>
       </div>
 
       <Tabs defaultValue="marketplace" className="space-y-6">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="marketplace" className="gap-2">
             <ShoppingBag className="h-4 w-4" />
             Marketplace

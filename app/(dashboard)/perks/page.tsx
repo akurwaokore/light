@@ -50,9 +50,9 @@ export default function PerksPage() {
   }, [])
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="container mx-auto space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Member Perks</h1>
+        <h1 className="font-serif text-2xl font-bold sm:text-3xl">Member Perks</h1>
         <p className="mt-1 text-muted-foreground">Exclusive discounts and offers from alumni-owned businesses</p>
       </div>
 
@@ -68,13 +68,13 @@ export default function PerksPage() {
               Show your digital membership card to unlock special discounts at these alumni-owned businesses
             </p>
           </div>
-          <Button variant="secondary">View Membership Card</Button>
+          <Button variant="secondary" className="w-full md:w-auto">View Membership Card</Button>
         </CardContent>
       </Card>
 
       {/* Perks Grid */}
       {loading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="h-64 animate-pulse bg-muted/40" />
           ))}
@@ -87,7 +87,7 @@ export default function PerksPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {perks.map((perk) => (
             <Card key={perk.id} className="transition-all hover:shadow-lg">
               <CardHeader className="pb-3">
@@ -115,9 +115,9 @@ export default function PerksPage() {
                   <p className="text-sm text-muted-foreground">Exclusive Offer</p>
                   <p className="font-serif text-lg font-bold text-accent">{perk.discount}</p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <User className="h-4 w-4" />
-                  <span>{perk.owner}</span>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                  <User className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{perk.owner}</span>
                 </div>
                 <Button variant="outline" className="w-full bg-transparent">
                   <ExternalLink className="mr-2 h-4 w-4" />
@@ -137,7 +137,7 @@ export default function PerksPage() {
             <p className="mt-1 text-muted-foreground">List your business and offer exclusive perks to fellow alumni</p>
           </div>
           <BecomePartnerModal onSubmitted={fetchPerks}>
-            <Button>Become a Partner</Button>
+            <Button className="w-full md:w-auto">Become a Partner</Button>
           </BecomePartnerModal>
         </CardContent>
       </Card>

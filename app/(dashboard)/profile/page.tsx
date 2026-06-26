@@ -219,11 +219,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto space-y-8 p-6">
+    <div className="container mx-auto space-y-8 p-4 md:p-6">
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="font-[Belleza] text-3xl font-bold">My Profile</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-[Belleza] text-2xl sm:text-3xl font-bold">My Profile</h1>
             <div className="flex gap-2">
               {profile?.is_hiring && (
                 <Badge className="bg-blue-600 text-white animate-pulse">Hiring</Badge>
@@ -238,7 +238,7 @@ export default function ProfilePage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="activity">My Activity</TabsTrigger>
           <TabsTrigger value="membership">Membership Card</TabsTrigger>
@@ -251,8 +251,8 @@ export default function ProfilePage() {
               <CardTitle className="font-[Belleza]">Profile Photo</CardTitle>
               <CardDescription className="font-[Alegreya]">Update your profile picture</CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center gap-6">
-              <Avatar className="h-24 w-24">
+            <CardContent className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
+              <Avatar className="h-24 w-24 shrink-0">
                 <AvatarImage src={profile.photo_url || "/placeholder.svg"} alt={profile.display_name} />
                 <AvatarFallback className="text-2xl">
                   {profile.display_name
@@ -582,8 +582,8 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            <div className="mt-6 flex items-center gap-4">
-              <Button type="submit" disabled={isLoading} className="min-w-[150px]">
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto sm:min-w-[150px]">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -593,7 +593,7 @@ export default function ProfilePage() {
                   "Save Changes"
                 )}
               </Button>
-              <Button type="button" variant="outline" onClick={() => reset()}>
+              <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => reset()}>
                 Cancel
               </Button>
             </div>
@@ -654,14 +654,14 @@ export default function ProfilePage() {
             <CardContent>
               {membershipStatus ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
                       {membershipStatus.isLifetime ? (
-                        <Infinity className="h-6 w-6 text-primary" />
+                        <Infinity className="h-6 w-6 text-primary shrink-0" />
                       ) : (
-                        <Calendar className="h-6 w-6 text-primary" />
+                        <Calendar className="h-6 w-6 text-primary shrink-0" />
                       )}
-                      <div>
+                      <div className="min-w-0">
                         <p className="font-semibold font-[Belleza]">
                           {membershipStatus.isLifetime ? "Lifetime" : "Annual"} Membership
                         </p>
@@ -670,7 +670,7 @@ export default function ProfilePage() {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right shrink-0">
                       <Badge className={membershipStatus.isActive ? "bg-emerald-500" : "bg-red-500"}>
                         {membershipStatus.isActive ? "Active" : "Expired"}
                       </Badge>
@@ -782,11 +782,11 @@ export default function ProfilePage() {
                   {transactions.map((tx) => (
                     <div
                       key={tx.id}
-                      className="flex items-center justify-between rounded-lg border border-border p-4"
+                      className="flex flex-col gap-2 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold font-[Belleza] capitalize">{tx.description || tx.type}</p>
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="font-semibold font-[Belleza] capitalize truncate">{tx.description || tx.type}</p>
                           <Badge variant={tx.status === 'completed' ? 'default' : 'secondary'} className="text-[10px] h-4">
                             {tx.status}
                           </Badge>
@@ -801,7 +801,7 @@ export default function ProfilePage() {
                           })} • {tx.payment_method?.toUpperCase()}
                         </p>
                       </div>
-                      <p className="font-bold text-primary font-[Belleza]">
+                      <p className="font-bold text-primary font-[Belleza] shrink-0">
                         {tx.currency || 'KES'} {tx.amount?.toLocaleString()}
                       </p>
                     </div>

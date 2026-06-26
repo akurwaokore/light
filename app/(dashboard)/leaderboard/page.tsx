@@ -62,8 +62,8 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="glass-card rounded-3xl p-8 animate-pulse">
+      <div className="container mx-auto p-4 md:p-6">
+        <div className="glass-card rounded-3xl p-6 animate-pulse sm:p-8">
           <div className="h-8 w-48 bg-muted rounded mb-4" />
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
@@ -76,12 +76,12 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="glass-card rounded-3xl p-8">
+      <div className="glass-card rounded-3xl p-6 sm:p-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Points Leaderboard
             </h1>
             <p className="text-muted-foreground">
@@ -90,7 +90,7 @@ export default function LeaderboardPage() {
             </p>
           </div>
           <Select value={campus} onValueChange={setCampus}>
-            <SelectTrigger className="w-[200px] glass-card border-white/20">
+            <SelectTrigger className="w-full sm:w-[200px] glass-card border-white/20">
               <SelectValue placeholder="Select campus" />
             </SelectTrigger>
             <SelectContent>
@@ -105,7 +105,7 @@ export default function LeaderboardPage() {
 
       {/* Top 3 Podium */}
       {leaderboard.length >= 3 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {/* 2nd Place */}
           <Card className="glass-card border-white/20 rounded-3xl hover-card mt-8">
             <CardHeader className="text-center pb-3">
@@ -184,13 +184,13 @@ export default function LeaderboardPage() {
             {leaderboard.map((entry) => (
               <div
                 key={entry.id}
-                className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-2xl transition-all sm:gap-4 sm:p-4 ${
                   entry.rank <= 3
                     ? "glass-card border-white/20 hover:scale-[1.02]"
                     : "hover:bg-accent/50 border border-transparent hover:border-white/10"
                 }`}
               >
-                <div className="flex items-center justify-center w-12">
+                <div className="flex items-center justify-center w-8 shrink-0 sm:w-12">
                   {entry.rank <= 3 ? (
                     getRankIcon(entry.rank)
                   ) : (
@@ -198,7 +198,7 @@ export default function LeaderboardPage() {
                   )}
                 </div>
 
-                <Avatar className="h-12 w-12">
+                <Avatar className="h-10 w-10 shrink-0 sm:h-12 sm:w-12">
                   <AvatarImage src={entry.photo_url || "/placeholder.svg"} />
                   <AvatarFallback>{entry.display_name?.charAt(0) || "?"}</AvatarFallback>
                 </Avatar>
@@ -208,20 +208,20 @@ export default function LeaderboardPage() {
                     <h3 className="font-semibold truncate">{entry.display_name || "Anonymous"}</h3>
                     {getRankBadge(entry.rank)}
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <span>{entry.campus}</span>
-                    <span>•</span>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <span className="truncate">{entry.campus}</span>
+                    <span className="hidden sm:inline">•</span>
                     <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                      <Calendar className="h-3 w-3 shrink-0" />
                       Class of {entry.graduation_year}
                     </span>
-                    <span>•</span>
+                    <span className="hidden sm:inline">•</span>
                     <span>{entry.total_transactions} transactions</span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-2xl font-bold">{entry.points}</div>
+                <div className="text-right shrink-0">
+                  <div className="text-xl font-bold sm:text-2xl">{entry.points}</div>
                   <div className="text-xs text-muted-foreground">points</div>
                 </div>
               </div>

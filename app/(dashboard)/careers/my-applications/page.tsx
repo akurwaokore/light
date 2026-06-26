@@ -156,10 +156,10 @@ export default function MyApplicationsPage() {
                           <Building2 className="h-6 w-6 text-muted-foreground" />
                         )}
                       </div>
-                      <div className="space-y-1">
-                        <h3 className="font-serif text-lg font-bold leading-none">{app.job?.title}</h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="font-medium text-foreground">{app.job?.company}</span>
+                      <div className="space-y-1 min-w-0">
+                        <h3 className="font-serif text-lg font-bold leading-none truncate">{app.job?.title}</h3>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground truncate">{app.job?.company}</span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />

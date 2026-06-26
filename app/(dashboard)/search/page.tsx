@@ -38,8 +38,8 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-3xl space-y-6 p-6">
-      <h1 className="font-serif text-3xl font-bold">Search</h1>
+    <div className="container mx-auto max-w-3xl space-y-6 p-4 md:p-6">
+      <h1 className="font-serif text-2xl sm:text-3xl font-bold">Search</h1>
       <div className="relative">
         <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input className="pl-10" placeholder="Search people, jobs, marketplace, posts…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
@@ -51,7 +51,7 @@ export default function SearchPage() {
         <p className="text-muted-foreground">Searching…</p>
       ) : (
         <Tabs defaultValue="people">
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="people"><Users className="mr-1 h-4 w-4" /> People ({counts.people})</TabsTrigger>
             <TabsTrigger value="jobs"><Briefcase className="mr-1 h-4 w-4" /> Jobs ({counts.jobs})</TabsTrigger>
             <TabsTrigger value="products"><ShoppingBag className="mr-1 h-4 w-4" /> Market ({counts.products})</TabsTrigger>
@@ -62,9 +62,9 @@ export default function SearchPage() {
             {results.people.map((p: any) => (
               <Link key={p.id} href={`/members/${p.id}`}>
                 <Card className="hover:shadow-md"><CardContent className="flex items-center gap-3 p-3">
-                  <Avatar className="h-9 w-9"><AvatarImage src={p.photo_url || undefined} /><AvatarFallback>{p.display_name?.[0]}</AvatarFallback></Avatar>
-                  <div><p className="font-medium">{p.display_name}</p>
-                    <p className="text-xs text-muted-foreground">{[p.job_title, p.company].filter(Boolean).join(" · ")}</p></div>
+                  <Avatar className="h-9 w-9 shrink-0"><AvatarImage src={p.photo_url || undefined} /><AvatarFallback>{p.display_name?.[0]}</AvatarFallback></Avatar>
+                  <div className="min-w-0"><p className="font-medium truncate">{p.display_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{[p.job_title, p.company].filter(Boolean).join(" · ")}</p></div>
                 </CardContent></Card>
               </Link>
             ))}

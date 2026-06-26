@@ -57,9 +57,9 @@ export default function MembersDirectoryPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="container mx-auto space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Members Directory</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">Members Directory</h1>
         <p className="mt-1 text-muted-foreground">Find and connect with fellow Light Academy alumni</p>
       </div>
 
@@ -73,7 +73,7 @@ export default function MembersDirectoryPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredMembers.map((member) => (
           <Link href={`/members/${member.id}`} key={member.id}>
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">

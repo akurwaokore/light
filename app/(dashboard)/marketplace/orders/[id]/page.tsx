@@ -23,28 +23,28 @@ export default function OrderDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
-  if (loading) return <div className="container mx-auto max-w-2xl p-6 text-muted-foreground">Loading…</div>
-  if (!order) return <div className="container mx-auto max-w-2xl p-6">Order not found.</div>
+  if (loading) return <div className="container mx-auto max-w-2xl p-4 text-muted-foreground md:p-6">Loading…</div>
+  if (!order) return <div className="container mx-auto max-w-2xl p-4 md:p-6">Order not found.</div>
 
   return (
-    <div className="container mx-auto max-w-2xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl font-bold">Order Receipt</h1>
-        <Badge>{order.status.replace("_", " ")}</Badge>
+    <div className="container mx-auto max-w-2xl space-y-6 p-4 md:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <h1 className="font-serif text-2xl font-bold sm:text-3xl">Order Receipt</h1>
+        <Badge className="w-fit">{order.status.replace("_", " ")}</Badge>
       </div>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Items</CardTitle></CardHeader>
         <CardContent className="space-y-2">
           {(order.items || []).map((it: any) => (
-            <div key={it.id} className="flex justify-between border-b pb-2 text-sm">
-              <span>{it.title_snapshot} × {it.quantity}</span>
-              <span>{order.currency} {Number(it.line_total).toLocaleString()}</span>
+            <div key={it.id} className="flex flex-col gap-1 border-b pb-2 text-sm sm:flex-row sm:justify-between sm:gap-2">
+              <span className="min-w-0 break-words">{it.title_snapshot} × {it.quantity}</span>
+              <span className="shrink-0 break-words">{order.currency} {Number(it.line_total).toLocaleString()}</span>
             </div>
           ))}
-          <div className="flex justify-between pt-2 font-bold">
+          <div className="flex flex-col gap-1 pt-2 font-bold sm:flex-row sm:justify-between sm:gap-2">
             <span>Total</span>
-            <span>{order.currency} {Number(order.total).toLocaleString()}</span>
+            <span className="break-words">{order.currency} {Number(order.total).toLocaleString()}</span>
           </div>
         </CardContent>
       </Card>
@@ -55,9 +55,9 @@ export default function OrderDetailPage() {
           <CardContent className="space-y-3">
             {contact.map((c: any) => (
               <div key={c.party} className="text-sm">
-                <p className="font-medium capitalize flex items-center gap-1"><User className="h-3 w-3" /> {c.party}: {c.full_name}</p>
-                {c.phone && <p className="flex items-center gap-1 text-muted-foreground"><Phone className="h-3 w-3" /> {c.phone}</p>}
-                {c.email && <p className="flex items-center gap-1 text-muted-foreground"><Mail className="h-3 w-3" /> {c.email}</p>}
+                <p className="font-medium capitalize flex items-center gap-1 min-w-0"><User className="h-3 w-3 shrink-0" /> <span className="break-words">{c.party}: {c.full_name}</span></p>
+                {c.phone && <p className="flex items-center gap-1 text-muted-foreground min-w-0"><Phone className="h-3 w-3 shrink-0" /> <span className="break-words">{c.phone}</span></p>}
+                {c.email && <p className="flex items-center gap-1 text-muted-foreground min-w-0"><Mail className="h-3 w-3 shrink-0" /> <span className="break-words">{c.email}</span></p>}
               </div>
             ))}
           </CardContent>

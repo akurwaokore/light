@@ -193,9 +193,9 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-8 p-6">
+    <div className="container mx-auto space-y-8 p-4 md:p-6">
       <div>
-        <h1 className="font-[Belleza] text-3xl font-bold">Membership & Payments</h1>
+        <h1 className="font-[Belleza] text-2xl sm:text-3xl font-bold">Membership & Payments</h1>
         <p className="mt-1 text-muted-foreground font-[Alegreya]">Choose your membership plan</p>
       </div>
 

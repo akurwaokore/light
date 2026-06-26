@@ -30,8 +30,8 @@ export default function SellerDashboardPage() {
   ]
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-6">
-      <h1 className="font-serif text-3xl font-bold">Seller Dashboard</h1>
+    <div className="container mx-auto max-w-4xl space-y-6 p-4 md:p-6">
+      <h1 className="font-serif text-2xl font-bold sm:text-3xl">Seller Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {cards.map((c) => (
@@ -53,12 +53,12 @@ export default function SellerDashboardPage() {
           <div className="space-y-2">
             {orders.map((o) => (
               <Card key={o.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium">{o.items?.length || 0} item(s) · KSh {Number(o.total).toLocaleString()}</p>
+                <CardContent className="flex items-center justify-between gap-2 p-4">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{o.items?.length || 0} item(s) · KSh {Number(o.total).toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">{new Date(o.created_at).toLocaleDateString()}</p>
                   </div>
-                  <Badge>{o.status.replace("_", " ")}</Badge>
+                  <Badge className="shrink-0">{o.status.replace("_", " ")}</Badge>
                 </CardContent>
               </Card>
             ))}

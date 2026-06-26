@@ -12,5 +12,9 @@ export default async function Layout({ children }: { children: React.ReactNode }
     redirect("/auth/signin")
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>
+  return (
+    <DashboardLayout>
+      <div className="w-full min-w-0 overflow-x-hidden">{children}</div>
+    </DashboardLayout>
+  )
 }

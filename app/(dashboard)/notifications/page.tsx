@@ -120,13 +120,13 @@ export default function NotificationsPage() {
 
   return (
     <div className="container mx-auto max-w-4xl py-8 px-4">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Notifications</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Notifications</h1>
           <p className="text-muted-foreground">Stay updated with your alumni network activity.</p>
         </div>
         {notifications.some(n => !n.read) && (
-          <Button variant="outline" size="sm" onClick={markAllRead} className="rounded-full">
+          <Button variant="outline" size="sm" onClick={markAllRead} className="w-full sm:w-auto rounded-full">
             <Check className="mr-2 h-4 w-4" /> Mark all read
           </Button>
         )}

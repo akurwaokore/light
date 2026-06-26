@@ -108,12 +108,12 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ id: st
 
                   <div className="flex-1 space-y-4">
                     <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold">{app.applicant.full_name || app.applicant.display_name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="text-xl font-bold break-words">{app.applicant.full_name || app.applicant.display_name}</h3>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-4 w-4" />
-                            {app.applicant.email}
+                          <span className="flex min-w-0 items-center gap-1">
+                            <Mail className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{app.applicant.email}</span>
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
@@ -121,7 +121,7 @@ export default function JobApplicantsPage({ params }: { params: Promise<{ id: st
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <CvViewButton cvId={(app as any).cv_id} cvUrl={app.cv_url} />
                         <Button asChild size="sm">
                           <Link href={`/members/${app.applicant.id}`}>

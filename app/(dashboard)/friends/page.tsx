@@ -228,7 +228,7 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6 relative">
+    <div className="container mx-auto space-y-6 p-4 md:p-6 relative">
       {activeChat && (
         <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm">
           <ChatWindow 
@@ -239,7 +239,7 @@ export default function FriendsPage() {
         </div>
       )}
       <div>
-        <h1 className="font-serif text-3xl font-bold">My Network</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">My Network</h1>
         <p className="mt-1 text-muted-foreground">Connect with fellow alumni and expand your network</p>
       </div>
 
@@ -254,9 +254,9 @@ export default function FriendsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {pendingRequests.map((request) => (
-              <div key={request.id} className="flex items-center justify-between rounded-lg bg-background p-3">
-                <div className="flex items-center gap-3">
-                  <Avatar>
+              <div key={request.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg bg-background p-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="shrink-0">
                     <AvatarImage src={request.profile.photo_url || "/placeholder.svg"} />
                     <AvatarFallback>
                       {request.profile.display_name
@@ -265,9 +265,9 @@ export default function FriendsPage() {
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-medium">{request.profile.display_name}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{request.profile.display_name}</p>
+                    <p className="text-sm text-muted-foreground truncate">
                       {request.profile.job_title && request.profile.company
                         ? `${request.profile.job_title} at ${request.profile.company}`
                         : request.profile.campus || "Alumni"}

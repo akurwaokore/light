@@ -71,15 +71,15 @@ export default function JobApplicationsPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="container mx-auto space-y-6 p-4 md:p-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/profile/listings">
             <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
-        <div>
-          <h1 className="font-serif text-3xl font-bold">Applications for {job?.title}</h1>
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold break-words">Applications for {job?.title}</h1>
           <p className="text-muted-foreground">{applications.length} candidates applied</p>
         </div>
       </div>
@@ -95,14 +95,14 @@ export default function JobApplicationsPage() {
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row justify-between gap-6">
                   <div className="space-y-4 flex-1">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="h-12 w-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
                         {app.applicant?.display_name?.[0] || 'A'}
                       </div>
-                      <div>
-                        <h3 className="font-bold text-lg">{app.applicant?.display_name}</h3>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3" /> {app.applicant?.email}
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-lg truncate">{app.applicant?.display_name}</h3>
+                        <p className="text-sm text-muted-foreground flex min-w-0 items-center gap-1">
+                          <Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{app.applicant?.email}</span>
                         </p>
                       </div>
                       <Badge className="capitalize">{app.status}</Badge>
