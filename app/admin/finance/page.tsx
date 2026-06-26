@@ -147,12 +147,12 @@ export default function FinanceDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-3xl font-bold">Financial Management</h1>
           <p className="text-muted-foreground">Comprehensive financial overview and controls</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select period" />
@@ -349,18 +349,18 @@ export default function FinanceDashboard() {
         <TabsContent value="transactions" className="space-y-4">
           <Card className="glass-card">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Recent Transactions</CardTitle>
                   <CardDescription>Latest payment activities</CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search transactions..." className="pl-8 w-[200px]" />
+                    <Input placeholder="Search transactions..." className="pl-8 w-full sm:w-[200px]" />
                   </div>
                   <Select value={transactionFilter} onValueChange={setTransactionFilter}>
-                    <SelectTrigger className="w-[150px]">
+                    <SelectTrigger className="w-full sm:w-[150px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -375,7 +375,8 @@ export default function FinanceDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="w-full overflow-x-auto">
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Transaction ID</TableHead>
@@ -419,6 +420,7 @@ export default function FinanceDashboard() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -426,7 +428,7 @@ export default function FinanceDashboard() {
         <TabsContent value="payouts" className="space-y-4">
           <Card className="glass-card">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Pending Payouts</CardTitle>
                   <CardDescription>Seller earnings awaiting approval</CardDescription>
@@ -435,7 +437,8 @@ export default function FinanceDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="w-full overflow-x-auto">
+              <Table className="min-w-[800px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Payout ID</TableHead>
@@ -470,6 +473,7 @@ export default function FinanceDashboard() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -88,3 +88,59 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+async function requireAdmin(supabase: any) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) }
+  const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
+  if (!profile?.is_admin) return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
+  return { user }
+}
+
+// PATCH - admin: verify/activate, update status, or edit a perk.
+// Body: { id, status?, is_verified?, ...fields }
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = await createServerClient()
+    const guard = await requireAdmin(supabase)
+    if (guard.error) return guard.error
+
+    const body = await request.json()
+    const { id, ...rest } = body
+    if (!id) return NextResponse.json({ error: "Perk id is required" }, { status: 400 })
+
+    const allowed = ["business", "description", "discount", "category", "logo_url", "status", "is_verified"]
+    const updates: Record<string, any> = {}
+    for (const key of allowed) if (key in rest) updates[key] = rest[key]
+    // A common admin action is "approve" → activate + mark verified.
+    if (rest.action === "approve") {
+      updates.status = "active"
+      updates.is_verified = true
+    }
+    if (rest.action === "reject") updates.status = "rejected"
+
+    const { data, error } = await supabase.from("perks").update(updates).eq("id", id).select().single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true, perk: data })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+// DELETE - admin: remove a perk. /api/perks?id=<uuid>
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = await createServerClient()
+    const guard = await requireAdmin(supabase)
+    if (guard.error) return guard.error
+
+    const id = new URL(request.url).searchParams.get("id")
+    if (!id) return NextResponse.json({ error: "Perk id is required" }, { status: 400 })
+
+    const { error } = await supabase.from("perks").delete().eq("id", id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

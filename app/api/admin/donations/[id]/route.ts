@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server"
 import { checkAdminAccess, unauthorizedResponse } from "@/lib/admin-auth"
+import { createAdminClient } from "@/lib/supabase/admin"
+
+// Admin already verified in code; use the service-role client for the write so
+// donation_campaigns' role-based RLS doesn't silently block real admins.
+function db(fallback: any) {
+  try {
+    return createAdminClient()
+  } catch {
+    return fallback
+  }
+}
 
 export async function PATCH(
   request: Request,
@@ -11,11 +22,11 @@ export async function PATCH(
   const body = await request.json()
   const { id } = await params
 
-  const { data: campaign, error } = await supabase!
+  const { data: campaign, error } = await db(supabase)
     .from("donation_campaigns")
-    .update({ 
-      ...body, 
-      updated_at: new Date().toISOString() 
+    .update({
+      ...body,
+      updated_at: new Date().toISOString()
     })
     .eq("id", id)
     .select()
@@ -35,7 +46,7 @@ export async function DELETE(
 
   const { id } = await params
 
-  const { error } = await supabase!
+  const { error } = await db(supabase)
     .from("donation_campaigns")
     .delete()
     .eq("id", id)

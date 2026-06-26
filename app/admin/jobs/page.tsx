@@ -172,12 +172,12 @@ export default function JobsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-3xl font-bold">Jobs Management</h1>
           <p className="text-muted-foreground">Manage alumni career opportunities and listings</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="gap-2" onClick={handleBulkApprove}>
             <CheckCircle className="h-4 w-4 text-green-500" />
             Approve All Pending
@@ -205,7 +205,7 @@ export default function JobsManagement() {
                   onChange={e => setFormData({...formData, title: e.target.value})}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="company">Company</Label>
                   <Input 
@@ -277,8 +277,8 @@ export default function JobsManagement() {
             />
           </div>
           
-          <div className="rounded-md border overflow-hidden">
-            <Table>
+          <div className="rounded-md border overflow-x-auto">
+            <Table className="min-w-[800px]">
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Job Details</TableHead>

@@ -131,7 +131,7 @@ export default function PermissionsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-3xl font-bold">Permissions & Roles</h1>
           <p className="text-muted-foreground">Manage user roles and access permissions</p>
@@ -300,7 +300,8 @@ export default function PermissionsManagement() {
           <CardDescription>Assign roles to users</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="w-full overflow-x-auto">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
@@ -330,6 +331,7 @@ export default function PermissionsManagement() {
               </TableRow>
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

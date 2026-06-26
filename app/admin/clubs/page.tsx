@@ -185,8 +185,8 @@ export default function AdminClubsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-hidden">
-            <Table>
+          <div className="rounded-md border overflow-x-auto">
+            <Table className="min-w-[800px]">
               <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="w-[350px]">Club Name & Description</TableHead>

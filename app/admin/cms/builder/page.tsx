@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Eye, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { ALL_PUBLIC_PAGES } from "@/lib/page-defaults"
 
 type Block = { id?: string; type: string; content: any }
 type Column = { id?: string; span: number; blocks: Block[] }
@@ -137,15 +138,24 @@ export default function CmsBuilderPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {pages.length === 0 ? (
-            <span className="text-xs text-muted-foreground">No CMS pages yet. Create one, or edit "home".</span>
-          ) : (
-            pages.map((p: any) => (
-              <Button key={p.id} size="sm" variant={p.slug === slug ? "default" : "outline"} onClick={() => openPage(p.slug)}>
-                {p.slug}{p.published ? "" : " (draft)"}
-              </Button>
-            ))
-          )}
+          {pages.map((p: any) => (
+            <Button key={p.id} size="sm" variant={p.slug === slug ? "default" : "outline"} onClick={() => openPage(p.slug)}>
+              {p.slug}{p.published ? "" : " (draft)"}
+            </Button>
+          ))}
+          {/* Known public pages not yet in the CMS — open to create/edit them. */}
+          {ALL_PUBLIC_PAGES.filter((kp) => !pages.some((p: any) => p.slug === kp.slug)).map((kp) => (
+            <Button
+              key={kp.slug}
+              size="sm"
+              variant={kp.slug === slug ? "default" : "ghost"}
+              className="border border-dashed"
+              onClick={() => openPage(kp.slug)}
+              title="Not yet created — open and Save to add it"
+            >
+              {kp.slug} +
+            </Button>
+          ))}
         </div>
       </div>
 

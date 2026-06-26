@@ -1,67 +1,85 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
+/**
+ * Leaderboard rankings.
+ *
+ * `user_points` is a VIEW over `profiles.points`, so a PostgREST relational
+ * embed (`profiles!inner(...)`) through it is unreliable — PostgREST can't
+ * always detect a foreign-key relationship across a view, which previously made
+ * this endpoint return an empty list. We instead read the ranking straight from
+ * `profiles` (the real source of `points`), with a two-step `user_points`
+ * fallback for older schemas where the points column lives elsewhere.
+ */
 export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createServerClient()
-    const searchParams = request.nextUrl.searchParams
-    const limit = Number.parseInt(searchParams.get("limit") || "50")
-    const campus = searchParams.get("campus")
+  const supabase = await createServerClient()
+  const searchParams = request.nextUrl.searchParams
+  const limit = Number.parseInt(searchParams.get("limit") || "50")
+  const campus = searchParams.get("campus")
 
-    // Query user_points and join with profiles to get the full leaderboard data
-    // Sort by points descending
+  const shape = (rows: any[]) =>
+    (rows || []).map((p: any, index: number) => ({
+      id: p.id,
+      user_id: p.id,
+      display_name: p.display_name || p.full_name || "Alumni Member",
+      full_name: p.full_name || p.display_name || "Alumni Member",
+      photo_url: p.photo_url || p.avatar_url || null,
+      avatar_url: p.avatar_url || p.photo_url || null,
+      campus: p.campus || null,
+      graduation_year: p.graduation_year || null,
+      points: p.points ?? 0,
+      rank: index + 1,
+      total_transactions: p.total_transactions ?? 0,
+    }))
+
+  try {
+    // Primary path: rank directly off profiles.points.
     let query = supabase
-      .from("user_points")
-      .select(`
-        user_id,
-        total_points,
-        profiles!inner(
-          id,
-          full_name,
-          display_name,
-          avatar_url,
-          photo_url,
-          campus,
-          graduation_year
-        )
-      `)
-      .order('total_points', { ascending: false })
+      .from("profiles")
+      .select("id, full_name, display_name, avatar_url, photo_url, campus, graduation_year, points")
+      .order("points", { ascending: false, nullsFirst: false })
       .limit(limit)
 
-    // Filter by campus if specified and not 'all'
-    if (campus && campus !== "all") {
-      query = query.eq("profiles.campus", campus)
+    if (campus && campus !== "all") query = query.eq("campus", campus)
+
+    const { data, error } = await query
+    if (!error && data) {
+      return NextResponse.json({ leaderboard: shape(data) })
+    }
+    if (error) console.error("[Leaderboard API] profiles path failed, falling back:", error.message)
+  } catch (err: any) {
+    console.error("[Leaderboard API] profiles path threw:", err?.message)
+  }
+
+  // Fallback path: two-step over the user_points view, joined in JS.
+  try {
+    const { data: points, error: pErr } = await supabase
+      .from("user_points")
+      .select("user_id, total_points")
+      .order("total_points", { ascending: false })
+      .limit(limit)
+    if (pErr) throw pErr
+
+    const ids = Array.from(new Set((points || []).map((p: any) => p.user_id).filter(Boolean)))
+    let profilesById: Record<string, any> = {}
+    if (ids.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, display_name, avatar_url, photo_url, campus, graduation_year")
+        .in("id", ids)
+      profilesById = Object.fromEntries((profs || []).map((p: any) => [p.id, p]))
     }
 
-    const { data: pointsData, error } = await query
+    let merged = (points || []).map((row: any) => ({
+      ...(profilesById[row.user_id] || { id: row.user_id }),
+      id: row.user_id,
+      points: row.total_points || 0,
+    }))
+    if (campus && campus !== "all") merged = merged.filter((m: any) => m.campus === campus)
 
-    if (error) {
-      console.error("[Leaderboard API] DB Query Error:", error)
-      return NextResponse.json({ leaderboard: [] }, { status: 500 })
-    }
-
-    // Transform joined data into flat leaderboard format expected by UI
-    const leaderboard = (pointsData || []).map((record: any, index: number) => {
-      // Handle potential array or single object return depending on join configuration
-      const profile = Array.isArray(record.profiles) ? record.profiles[0] : record.profiles;
-      return {
-        id: record.user_id,
-        user_id: record.user_id,
-        display_name: profile?.display_name || profile?.full_name || "Alumni Member",
-        full_name: profile?.full_name || profile?.display_name || "Alumni Member",
-        photo_url: profile?.photo_url || profile?.avatar_url,
-        avatar_url: profile?.avatar_url || profile?.photo_url,
-        campus: profile?.campus,
-        graduation_year: profile?.graduation_year,
-        points: record.total_points || 0,
-        rank: index + 1,
-        total_transactions: 0,
-      }
-    })
-
-    return NextResponse.json({ leaderboard })
-  } catch (error) {
-    console.error("[Leaderboard API] Unexpected Error:", error)
-    return NextResponse.json({ leaderboard: [] }, { status: 500 })
+    return NextResponse.json({ leaderboard: shape(merged) })
+  } catch (err: any) {
+    console.error("[Leaderboard API] fallback failed:", err?.message)
+    return NextResponse.json({ leaderboard: [] }, { status: 200 })
   }
 }

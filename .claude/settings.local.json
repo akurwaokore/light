@@ -106,7 +106,9 @@
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='posts' ORDER BY ordinal_position;\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT count\\(*\\) AS n, count\\(parent_id\\) AS with_parent FROM comments;\")",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT to_regclass\\('public.saved_posts'\\) AS saved_posts, to_regclass\\('public.comment_reactions'\\) AS comment_reactions;\")",
-      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT extname FROM pg_extension WHERE extname='ltree';\")"
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" scripts/db-run.mjs -q \"SELECT extname FROM pg_extension WHERE extname='ltree';\")",
+      "Bash(xargs ls -la)",
+      "Bash(npx tsc *)"
     ]
   }
 }

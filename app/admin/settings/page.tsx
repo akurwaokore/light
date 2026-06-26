@@ -91,12 +91,12 @@ export default function SystemSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-3xl font-bold">System Settings</h1>
           <p className="text-muted-foreground">Configure platform settings and preferences</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" />
             Reset
@@ -145,7 +145,7 @@ export default function SystemSettings() {
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="adminEmail">Admin Email</Label>
                   <Input
@@ -337,7 +337,7 @@ export default function SystemSettings() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>M-Pesa Configuration</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input placeholder="Consumer Key" />
                   <Input placeholder="Consumer Secret" type="password" />
                   <Input placeholder="Shortcode" />
@@ -347,7 +347,7 @@ export default function SystemSettings() {
               <Separator />
               <div className="space-y-2">
                 <Label>PayPal Configuration</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input placeholder="Client ID" />
                   <Input placeholder="Client Secret" type="password" />
                   <Select defaultValue="sandbox">
@@ -364,7 +364,7 @@ export default function SystemSettings() {
               <Separator />
               <div className="space-y-2">
                 <Label>Pesapal Configuration</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase text-muted-foreground">Consumer Key</Label>
                     <Input

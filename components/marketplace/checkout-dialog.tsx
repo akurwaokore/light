@@ -215,29 +215,39 @@ export function CheckoutDialog({
           </div>
         ) : (
           <>
-            <div className="relative h-40 w-full bg-muted">
-               <div className="flex h-full w-full items-center justify-center bg-primary/5">
+            <div className="relative h-40 w-full overflow-hidden bg-muted">
+              {product.image_url || product.images?.[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={product.image_url || product.images?.[0]}
+                  alt={product.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-primary/5">
                   <ShoppingCart className="h-12 w-12 text-primary/20" />
-               </div>
+                </div>
+              )}
             </div>
-            
+
             <div className="p-6">
               <DialogHeader className="mb-4 text-left">
-                <DialogTitle className="text-xl font-bold">{product.title}</DialogTitle>
-                <DialogDescription>
-                  <Badge variant="outline" className="mt-2 uppercase tracking-wider text-[10px]">
-                    {product.category}
-                  </Badge>
-                </DialogDescription>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <DialogTitle className="text-xl font-bold leading-tight">{product.title}</DialogTitle>
+                    <DialogDescription asChild>
+                      <Badge variant="outline" className="mt-2 text-[10px] uppercase tracking-wider">
+                        {product.category}
+                      </Badge>
+                    </DialogDescription>
+                  </div>
+                  <p className="shrink-0 text-2xl font-black text-primary">
+                    {formatPrice(product.price, product.currency)}
+                  </p>
+                </div>
               </DialogHeader>
 
-              <div className="text-right absolute top-44 right-6">
-                <p className="text-2xl font-black text-primary">
-                  {formatPrice(product.price, product.currency)}
-                </p>
-              </div>
-
-              <div className="space-y-4 rounded-lg bg-muted/30 p-4 text-sm mt-4">
+              <div className="space-y-4 rounded-lg bg-muted/30 p-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Item Price</span>
                   <span className="font-medium">{formatPrice(product.price, product.currency)}</span>

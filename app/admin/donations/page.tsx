@@ -75,7 +75,8 @@ export default function DonationsManagement() {
         setFormData({ title: "", target_amount: "", description: "", status: "active" })
         fetchCampaigns()
       } else {
-        toast.error("Failed to create campaign")
+        const msg = await response.text().catch(() => "")
+        toast.error(`Failed to create campaign${msg ? `: ${msg}` : ""}`)
       }
     } catch (err) {
       toast.error("An error occurred")

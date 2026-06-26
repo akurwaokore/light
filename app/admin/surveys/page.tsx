@@ -286,9 +286,9 @@ export default function SurveysPage() {
         {questionnaires.map((q) => (
           <Card key={q.id} className="glass-card">
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold">{q.title}</h3>
                     <Badge className={getStatusColor(q.status)}>{q.status}</Badge>
                     {q.is_required && <Badge variant="destructive">Required</Badge>}
@@ -347,7 +347,7 @@ export default function SurveysPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Target Audience</Label>
                 <Select value={targetAudience} onValueChange={setTargetAudience}>
@@ -404,7 +404,7 @@ export default function SurveysPage() {
                       placeholder="Enter your question"
                     />
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs">Question Type</Label>
                         <Select
@@ -492,7 +492,7 @@ export default function SurveysPage() {
 
           {analyticsData ? (
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="pt-6">
                     <p className="text-sm text-muted-foreground">Total Responses</p>

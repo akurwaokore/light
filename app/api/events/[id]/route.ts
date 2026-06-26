@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { type NextRequest, NextResponse } from "next/server"
 import { checkAdminAccess } from "@/lib/admin-auth"
 import { EVENT_SELECT, normalizeEvent } from "../route"
@@ -119,7 +120,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       }
     }
 
-    const { error } = await supabase.from("events").delete().eq("id", id)
+    // The events DELETE RLS policy keys off profiles.role, which this app's
+    // admin model (profiles.is_admin / user_roles) doesn't set — so a real
+    // admin's delete silently affects 0 rows. Authorization is already verified
+    // above, so perform the delete with the service-role client to bypass RLS.
+    // (event_registrations FK is ON DELETE CASCADE, so children are removed.)
+    let db = supabase
+    try {
+      db = createAdminClient()
+    } catch {
+      db = supabase // service key not configured — fall back to user client
+    }
+
+    const { error } = await db.from("events").delete().eq("id", id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

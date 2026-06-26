@@ -148,10 +148,15 @@ export default function AdminEventsPage() {
       })
 
       if (response.ok) {
+        toast.success("Event deleted")
         fetchEvents()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        toast.error(`Delete failed: ${err.error || response.statusText}`)
       }
     } catch (error) {
       console.log("[akurwas] Error deleting event:", error)
+      toast.error("Error deleting event")
     } finally {
       setActionLoading(null)
     }

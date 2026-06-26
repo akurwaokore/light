@@ -103,7 +103,8 @@ export default function PostsManagement() {
               className="max-w-sm"
             />
           </div>
-          <Table>
+          <div className="w-full overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Content</TableHead>
@@ -178,6 +179,7 @@ export default function PostsManagement() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

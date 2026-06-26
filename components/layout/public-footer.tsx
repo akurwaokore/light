@@ -29,10 +29,11 @@ export function PublicFooter() {
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/90">Explore</h4>
             <ul className="space-y-2 text-sm text-white/80">
               <li><Link href="/" className="hover:text-white">Home</Link></li>
-              <li><Link href="/feed" className="hover:text-white">Community Feed</Link></li>
-              <li><Link href="/events" className="hover:text-white">Events</Link></li>
-              <li><Link href="/marketplace" className="hover:text-white">Marketplace</Link></li>
-              <li><Link href="/careers" className="hover:text-white">Careers</Link></li>
+              <li><Link href="/public-events" className="hover:text-white">Events</Link></li>
+              <li><Link href="/public-perks" className="hover:text-white">Perks</Link></li>
+              <li><Link href="/public-leaderboard" className="hover:text-white">Leaderboard</Link></li>
+              <li><Link href="/testimonials" className="hover:text-white">Testimonials</Link></li>
+              <li><Link href="/video-gallery" className="hover:text-white">Videos</Link></li>
             </ul>
           </div>
 
@@ -43,7 +44,6 @@ export function PublicFooter() {
               <li><Link href="/members" className="hover:text-white">Member Directory</Link></li>
               <li><Link href="/clubs" className="hover:text-white">Clubs & Groups</Link></li>
               <li><Link href="/giving" className="hover:text-white">Giving Back</Link></li>
-              <li><Link href="/perks" className="hover:text-white">Member Perks</Link></li>
               <li><Link href="/newsletter" className="hover:text-white">Newsletter</Link></li>
             </ul>
           </div>

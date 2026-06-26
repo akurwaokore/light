@@ -23,12 +23,26 @@ import {
   Video,
   Youtube,
   ImagePlus,
-  X
+  X,
+  FileText
 } from "lucide-react"
 import Image from "next/image"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminHeader } from "@/components/admin/admin-header"
+import { PageSectionEditor } from "@/components/admin/page-section-editor"
+import { PAGE_DEFAULTS, GLOBAL_DEFAULTS, EDITABLE_PAGES } from "@/lib/page-defaults"
+
+/** Deep-merge stored CMS content over a page's defaults (arrays replace). */
+function mergeContent(base: any, override: any): any {
+  if (Array.isArray(override)) return override
+  if (override && typeof override === "object" && base && typeof base === "object" && !Array.isArray(base)) {
+    const out: any = { ...base }
+    for (const key of Object.keys(override)) out[key] = mergeContent(base[key], override[key])
+    return out
+  }
+  return override === undefined ? base : override
+}
 
 export default function CMSPage() {
   const [loading, setLoading] = useState(true)
@@ -51,9 +65,11 @@ export default function CMSPage() {
   const HERO_PAGES = [
     { slug: "home", label: "Home" },
     { slug: "features", label: "Features" },
+    { slug: "public-events", label: "Public Events" },
+    { slug: "public-perks", label: "Perks" },
+    { slug: "public-leaderboard", label: "Leaderboard" },
     { slug: "testimonials", label: "Testimonials" },
     { slug: "video-gallery", label: "Video Gallery" },
-    { slug: "public-events", label: "Public Events" },
   ]
   const [heroPage, setHeroPage] = useState("home")
   const heroSectionName = (slug: string) => (slug === "home" ? "hero" : `hero:${slug}`)
@@ -61,6 +77,26 @@ export default function CMSPage() {
   const [testimonials, setTestimonials] = useState<any[]>([])
   const [stats, setStats] = useState<any[]>([])
   const [videoGallery, setVideoGallery] = useState<any[]>([])
+
+  // Per-page section editor (Pages tab): edits the `page:<slug>` content row.
+  const [pageSlug, setPageSlug] = useState(EDITABLE_PAGES[0].slug)
+  const [pageContent, setPageContent] = useState<any>(PAGE_DEFAULTS[EDITABLE_PAGES[0].slug])
+
+  const loadPageContent = async (slug: string) => {
+    const defaults = PAGE_DEFAULTS[slug] || {}
+    try {
+      const res = await fetch(`/api/cms/sections?name=${encodeURIComponent(`page:${slug}`)}`)
+      if (res.ok) {
+        const row = await res.json()
+        setPageContent(mergeContent(defaults, row?.content || {}))
+        return
+      }
+    } catch (e) {
+      console.error("[CMS] loadPageContent error:", e)
+    }
+    setPageContent(defaults)
+  }
+  useEffect(() => { loadPageContent(pageSlug) }, [pageSlug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { toast } = useToast()
 
@@ -83,22 +119,17 @@ export default function CMSPage() {
 
       if (sectionsRes.ok) {
         const sections = await sectionsRes.json()
-        sections.forEach((section: any) => {
-          switch (section.section_name) {
-            case 'features':
-              if (section.content?.items) setFeatures(section.content.items)
-              break
-            case 'testimonials':
-              if (section.content?.items) setTestimonials(section.content.items)
-              break
-            case 'stats':
-              if (section.content?.items) setStats(section.content.items)
-              break
-            case 'video_gallery':
-              if (section.content?.items) setVideoGallery(section.content.items)
-              break
-          }
-        })
+        const byName: Record<string, any> = {}
+        sections.forEach((section: any) => { byName[section.section_name] = section.content })
+        // Pre-load each tab with the live front-end data: use the saved CMS
+        // section when present, otherwise fall back to the same defaults the
+        // front-end pages render — so the editor is never empty / out of sync.
+        const pick = (name: string, fallback: any[]) =>
+          Array.isArray(byName[name]?.items) && byName[name].items.length ? byName[name].items : fallback
+        setFeatures(pick('features', PAGE_DEFAULTS.features.pillars.items))
+        setTestimonials(pick('testimonials', PAGE_DEFAULTS.testimonials.grid.items))
+        setStats(pick('stats', GLOBAL_DEFAULTS.stats.items))
+        setVideoGallery(pick('video_gallery', GLOBAL_DEFAULTS.video_gallery.items))
       }
     } catch (error) {
       console.error("Error fetching CMS data:", error)
@@ -143,6 +174,26 @@ export default function CMSPage() {
       toast({ title: "Success", description: `${name.charAt(0).toUpperCase() + name.slice(1)} updated successfully` })
     } catch (error: any) {
       toast({ title: "Error", description: error.message || `Failed to update ${name}`, variant: "destructive" })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSeed = async (force = false) => {
+    if (force && !confirm("Reset ALL page content back to the built-in defaults? This overwrites current CMS content.")) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/cms/seed-pages${force ? "?force=1" : ""}`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Seed failed")
+      toast({
+        title: force ? "Pages reset to defaults" : "Pages seeded",
+        description: `Sections created: ${data.sections_created}, updated: ${data.sections_updated}. Builder pages: ${data.pages_created} new, ${data.trees_seeded} populated.`,
+      })
+      fetchData()
+      loadPageContent(pageSlug)
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" })
     } finally {
       setSaving(false)
     }
@@ -250,14 +301,20 @@ export default function CMSPage() {
         <AdminHeader />
         <main className="flex-1 p-6 bg-muted/30">
           <div className="container mx-auto">
-            <div className="mb-8 flex items-center justify-between">
+            <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">Content Management System</h1>
                 <p className="text-muted-foreground">Manage your website's dynamic content, sections, and assets.</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button asChild size="sm">
                   <a href="/admin/cms/builder"><Layout className="mr-1 h-4 w-4" /> Open Page Builder</a>
+                </Button>
+                <Button onClick={() => handleSeed(false)} disabled={saving} variant="outline" size="sm" className="gap-1">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Seed Content
+                </Button>
+                <Button onClick={() => handleSeed(true)} disabled={saving} variant="outline" size="sm" className="text-destructive">
+                  Reset to Defaults
                 </Button>
                 <Button onClick={fetchData} variant="outline" size="sm">Refresh Data</Button>
               </div>
@@ -272,6 +329,7 @@ export default function CMSPage() {
               <TabsList className="bg-muted/50 p-1 flex-wrap h-auto">
                 <TabsTrigger value="general" className="gap-2"><Globe className="h-4 w-4" />General</TabsTrigger>
                 <TabsTrigger value="hero" className="gap-2"><Layout className="h-4 w-4" />Hero</TabsTrigger>
+                <TabsTrigger value="pages" className="gap-2"><FileText className="h-4 w-4" />Pages</TabsTrigger>
                 <TabsTrigger value="features" className="gap-2"><MessageSquare className="h-4 w-4" />Features</TabsTrigger>
                 <TabsTrigger value="testimonials" className="gap-2"><ImageIcon className="h-4 w-4" />Testimonials</TabsTrigger>
                 <TabsTrigger value="stats" className="gap-2"><BarChart3 className="h-4 w-4" />Stats</TabsTrigger>
@@ -359,6 +417,55 @@ export default function CMSPage() {
                       />
                     </div>
                     <div className="flex justify-end"><Button onClick={() => saveSection(heroSectionName(heroPage), hero)} disabled={saving} className="gap-2">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Hero</Button></div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Pages Tab — full per-page section editor (page:<slug>) */}
+              <TabsContent value="pages" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Page Content</CardTitle>
+                    <CardDescription>
+                      Edit every section of each public page — headings, copy, list items and images.
+                      Changes go live immediately. (Edit each page's hero in the Hero tab.)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="grid gap-2">
+                      <Label>Editing page</Label>
+                      <select
+                        value={pageSlug}
+                        onChange={(e) => setPageSlug(e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm md:w-64"
+                      >
+                        {EDITABLE_PAGES.map((p) => (
+                          <option key={p.slug} value={p.slug}>{p.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="rounded-lg border bg-muted/10 p-4">
+                      <PageSectionEditor value={pageContent} onChange={setPageContent} />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPageContent(PAGE_DEFAULTS[pageSlug])}
+                      >
+                        Reset to defaults
+                      </Button>
+                      <Button
+                        onClick={() => saveSection(`page:${pageSlug}`, pageContent)}
+                        disabled={saving}
+                        className="gap-2"
+                      >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save Page
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

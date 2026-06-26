@@ -168,12 +168,12 @@ export default function ContentModeration() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-3xl font-bold">Content Moderation</h1>
           <p className="text-muted-foreground">Review and manage user-generated content</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline">
             <Filter className="mr-2 h-4 w-4" />
             Filters
@@ -207,7 +207,7 @@ export default function ContentModeration() {
         <TabsContent value="pending" className="space-y-4">
           <Card className="glass-card">
             <CardHeader>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="relative flex-1">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -218,7 +218,7 @@ export default function ContentModeration() {
                   />
                 </div>
                 <Select defaultValue="all">
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-full sm:w-[150px]">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -267,7 +267,7 @@ export default function ContentModeration() {
                             <p className="text-sm text-muted-foreground line-clamp-2">{content.content}</p>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={`/african-male-professional-headshot.jpg?query=${content.author}`} />
@@ -278,7 +278,7 @@ export default function ContentModeration() {
                             <Clock className="h-3 w-3" />
                             <span>{content.submittedAt}</span>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -368,7 +368,7 @@ export default function ContentModeration() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={`/african-woman-professional.jpg?query=${content.author}`} />
@@ -379,7 +379,7 @@ export default function ContentModeration() {
                             <Clock className="h-3 w-3" />
                             <span>{content.submittedAt}</span>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               size="sm"
                               variant="outline"

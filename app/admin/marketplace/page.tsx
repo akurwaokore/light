@@ -222,7 +222,7 @@ export default function MarketplaceManagement() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="price">Price (KES)</Label>
                     <Input 
@@ -274,7 +274,7 @@ export default function MarketplaceManagement() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="seller_name">Seller Name</Label>
                     <Input 
@@ -403,8 +403,8 @@ export default function MarketplaceManagement() {
               </Tabs>
             </div>
             
-            <div className="rounded-md border overflow-hidden">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[800px]">
                 <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead>Product Details</TableHead>
