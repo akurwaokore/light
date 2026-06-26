@@ -1,10 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
 import { createServerClient } from "@/lib/supabase/server"
+import { generateAIText, AINotConfiguredError } from "@/lib/ai/generate"
+
+export const dynamic = "force-dynamic"
 
 export async function POST(request: NextRequest) {
   try {
-    // Require authentication — this endpoint spends paid AI tokens.
+    // Require authentication — this endpoint spends the org's AI quota.
     const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -29,13 +31,18 @@ Requirements:
 
 Write only the description, no extra commentary.`
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
+    // Routes to the admin-configured provider (OpenAI / Gemini / custom LLM).
+    const { text } = await generateAIText({
       prompt,
+      system: "You are an expert marketplace copywriter.",
+      maxTokens: 300,
     })
 
     return NextResponse.json({ description: text.trim() })
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof AINotConfiguredError) {
+      return NextResponse.json({ error: error.message }, { status: 503 })
+    }
     console.error("[akurwas] Error generating AI description:", error)
     return NextResponse.json({ error: "Failed to generate description" }, { status: 500 })
   }

@@ -21,6 +21,7 @@ import {
   ShoppingBag,
   Save,
   RefreshCw,
+  Sparkles,
 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { useEffect } from "react"
@@ -52,6 +53,59 @@ export default function SystemSettings() {
     pesapalConsumerSecret: "",
     pesapalEnvironment: "sandbox",
   })
+
+  const [ai, setAi] = useState({
+    provider: "openai",
+    enabled: false,
+    openai_api_key: "",
+    openai_model: "gpt-4o-mini",
+    gemini_api_key: "",
+    gemini_model: "gemini-1.5-flash",
+    custom_url: "",
+    custom_api_key: "",
+    custom_model: "",
+    custom_auth_header: "Authorization",
+    custom_auth_scheme: "Bearer",
+    custom_format: "openai",
+  })
+  const [aiSaving, setAiSaving] = useState(false)
+
+  useEffect(() => {
+    const fetchAi = async () => {
+      try {
+        const res = await fetch("/api/admin/ai-settings")
+        if (res.ok) {
+          const data = await res.json()
+          if (data && Object.keys(data).length > 0) {
+            setAi((prev) => ({
+              ...prev,
+              ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== null)),
+            }))
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    fetchAi()
+  }, [])
+
+  const handleSaveAi = async () => {
+    setAiSaving(true)
+    try {
+      const res = await fetch("/api/admin/ai-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ai),
+      })
+      if (res.ok) toast.success("AI assistant settings saved")
+      else toast.error("Failed to save AI settings")
+    } catch {
+      toast.error("An error occurred while saving AI settings")
+    } finally {
+      setAiSaving(false)
+    }
+  }
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -109,10 +163,11 @@ export default function SystemSettings() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="ai">AI Assistant</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
@@ -410,6 +465,163 @@ export default function SystemSettings() {
                     </Select>
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ai" className="space-y-4">
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                AI Assistant
+              </CardTitle>
+              <CardDescription>
+                Power the "Generate with AI" features (marketplace descriptions, newsletters) with your own provider.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Label>Enable AI Assistant</Label>
+                  <p className="text-sm text-muted-foreground">Turn AI generation on across the platform</p>
+                </div>
+                <Switch checked={ai.enabled} onCheckedChange={(checked) => setAi({ ...ai, enabled: checked })} />
+              </div>
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>Provider</Label>
+                <Select value={ai.provider} onValueChange={(value) => setAi({ ...ai, provider: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="openai">OpenAI</SelectItem>
+                    <SelectItem value="gemini">Google Gemini</SelectItem>
+                    <SelectItem value="custom">Custom VPS / Self-hosted LLM</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {ai.provider === "openai" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>OpenAI API Key</Label>
+                    <Input
+                      type="password"
+                      placeholder="sk-..."
+                      value={ai.openai_api_key}
+                      onChange={(e) => setAi({ ...ai, openai_api_key: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Model</Label>
+                    <Input
+                      placeholder="gpt-4o-mini"
+                      value={ai.openai_model}
+                      onChange={(e) => setAi({ ...ai, openai_model: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {ai.provider === "gemini" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Gemini API Key</Label>
+                    <Input
+                      type="password"
+                      placeholder="AIza..."
+                      value={ai.gemini_api_key}
+                      onChange={(e) => setAi({ ...ai, gemini_api_key: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Model</Label>
+                    <Input
+                      placeholder="gemini-1.5-flash"
+                      value={ai.gemini_model}
+                      onChange={(e) => setAi({ ...ai, gemini_model: e.target.value })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {ai.provider === "custom" && (
+                <div className="space-y-4 rounded-lg border p-4">
+                  <p className="text-sm text-muted-foreground">
+                    Connect your own LLM running on a VPS. Use <strong>OpenAI-compatible</strong> if your server exposes a
+                    <code className="mx-1 rounded bg-muted px-1">/chat/completions</code> endpoint; otherwise use{" "}
+                    <strong>Simple</strong> (we POST <code className="rounded bg-muted px-1">{`{ prompt, system, model }`}</code>{" "}
+                    and read the text from the response).
+                  </p>
+                  <div className="space-y-2">
+                    <Label>Endpoint URL</Label>
+                    <Input
+                      placeholder="https://your-vps.example.com/v1/chat/completions"
+                      value={ai.custom_url}
+                      onChange={(e) => setAi({ ...ai, custom_url: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Model name</Label>
+                      <Input
+                        placeholder="llama-3.1-8b-instruct"
+                        value={ai.custom_model}
+                        onChange={(e) => setAi({ ...ai, custom_model: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Request format</Label>
+                      <Select value={ai.custom_format} onValueChange={(value) => setAi({ ...ai, custom_format: value })}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="openai">OpenAI-compatible</SelectItem>
+                          <SelectItem value="simple">Simple (prompt → text)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2 sm:col-span-1">
+                      <Label>Auth token</Label>
+                      <Input
+                        type="password"
+                        placeholder="optional"
+                        value={ai.custom_api_key}
+                        onChange={(e) => setAi({ ...ai, custom_api_key: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Auth header</Label>
+                      <Input
+                        placeholder="Authorization"
+                        value={ai.custom_auth_header}
+                        onChange={(e) => setAi({ ...ai, custom_auth_header: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Auth scheme</Label>
+                      <Input
+                        placeholder="Bearer (blank = raw token)"
+                        value={ai.custom_auth_scheme}
+                        onChange={(e) => setAi({ ...ai, custom_auth_scheme: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <Button onClick={handleSaveAi} disabled={aiSaving} className="w-full sm:w-auto">
+                  {aiSaving ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Save AI Settings
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -9,14 +9,19 @@ export async function GET(req: NextRequest) {
     const supabase = await createServerClient()
 
     if (name) {
-      const { data: section, error } = await supabase
+      // Tolerate duplicate rows for the same section_name (the DB has several
+      // legacy duplicates). Return the most recently updated one rather than
+      // erroring out the way .maybeSingle()/.single() would.
+      const { data: rows, error } = await supabase
         .from("cms_sections")
         .select("*")
         .eq("section_name", name)
-        .maybeSingle()
-      
+        .order("updated_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+
       if (error) throw error
-      return NextResponse.json(section)
+      return NextResponse.json(rows?.[0] ?? null)
     } else {
       const { data: sections, error } = await supabase
         .from("cms_sections")
@@ -49,22 +54,30 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json()
     const { content } = body
 
-    const { data: existingSection } = await supabase
+    // Find the newest existing row for this section_name. Using limit(1) instead
+    // of .maybeSingle() avoids erroring when legacy duplicates exist (which
+    // previously caused every save to INSERT yet another duplicate).
+    const { data: existingRows } = await supabase
       .from("cms_sections")
       .select("id")
       .eq("section_name", name)
-      .maybeSingle()
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(1)
+
+    const existingSection = existingRows?.[0]
 
     let result;
 
     if (existingSection) {
+      // Update by primary key so we touch exactly one row even if duplicates exist.
       const { data, error } = await supabase
         .from("cms_sections")
         .update({ content, updated_at: new Date().toISOString() })
-        .eq("section_name", name)
+        .eq("id", existingSection.id)
         .select()
         .single()
-      
+
       if (error) throw error
       result = data
     } else {

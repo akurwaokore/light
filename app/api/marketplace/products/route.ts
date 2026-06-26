@@ -89,7 +89,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ products: [] })
     }
 
-    const normalizedProducts = (products || []).map(normalizeMarketplaceProduct)
+    // products.seller_id references auth.users (no FK to profiles), so the
+    // embedded seller join above silently degrades. Attach seller profiles in a
+    // single follow-up query so cards/detail can show real names + avatars.
+    const productList = products || []
+    const sellerIds = [...new Set(productList.map((p: any) => p.seller_id).filter(Boolean))]
+    if (sellerIds.length > 0) {
+      const { data: sellers } = await supabase
+        .from("profiles")
+        .select("id, display_name, photo_url")
+        .in("id", sellerIds)
+      const sellerById = new Map((sellers || []).map((s: any) => [s.id, s]))
+      for (const p of productList) {
+        if (!p.seller && p.seller_id && sellerById.has(p.seller_id)) {
+          p.seller = sellerById.get(p.seller_id)
+        }
+      }
+    }
+
+    const normalizedProducts = productList.map(normalizeMarketplaceProduct)
 
     console.log("[akurwas] Products fetched:", normalizedProducts.length)
     return NextResponse.json({

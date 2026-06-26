@@ -62,8 +62,33 @@ export default function NewsletterPage() {
   const handleAIGenerate = async () => {
     if (!prompt.trim()) return
     setIsGenerating(true)
-    // Lightweight client-side composer (no external AI dependency).
-    await new Promise((resolve) => setTimeout(resolve, 600))
+    try {
+      // Try the admin-configured AI provider first.
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: `You write alumni-community newsletters in a ${tone} tone. Return only the newsletter body.`,
+          prompt: `Write a newsletter about: ${prompt}`,
+          maxTokens: 600,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.text) {
+          setContent(data.text)
+          if (!subject) setSubject(prompt.slice(0, 80))
+          return
+        }
+      }
+      // 503 = AI not configured; fall through to the local template.
+    } catch {
+      // network error — fall back below
+    } finally {
+      setIsGenerating(false)
+    }
+
+    // Fallback: lightweight client-side composer (no AI dependency).
     const greeting =
       tone === "casual" || tone === "friendly" ? "Hi Light Alumni," : "Dear Light Alumni Community,"
     setContent(`${greeting}
@@ -79,7 +104,6 @@ Stay connected, stay inspired!
 Warm regards,
 Light Alumni Connect Team`)
     if (!subject) setSubject(prompt.slice(0, 80))
-    setIsGenerating(false)
   }
 
   const persistDraft = async (): Promise<Newsletter | null> => {
