@@ -90,7 +90,7 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch("/api/posts?limit=5")
+      const response = await fetch("/api/posts?limit=5", { cache: "no-store" })
       const data = await response.json()
       
       if (response.ok && data && !data.error) {

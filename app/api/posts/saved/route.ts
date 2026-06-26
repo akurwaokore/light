@@ -1,6 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 
+// Per-user list — never cache/share across sessions.
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"
+
+const NO_STORE = { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" }
+
 function transformPosts(posts: any[], user: any) {
   return posts?.map((post: any) => {
     const reactions_by_type: Record<string, number> = {}
@@ -77,7 +83,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("[Get Saved Posts] Error:", error)
-      return NextResponse.json({ posts: [] })
+      return NextResponse.json({ posts: [] }, { headers: NO_STORE })
     }
 
     // Extract the nested post objects and filter out any null/deleted posts
@@ -87,9 +93,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       posts: transformPosts(posts, user),
-    })
+    }, { headers: NO_STORE })
   } catch (error: any) {
     console.error("[Get Saved Posts Handler] Error:", error)
-    return NextResponse.json({ posts: [] })
+    return NextResponse.json({ posts: [] }, { headers: NO_STORE })
   }
 }

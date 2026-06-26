@@ -2,6 +2,14 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import { validatePostContent, sanitizeText } from "@/lib/validation"
 
+// This feed is per-user (RLS-scoped). Never let it be cached/shared — a stale
+// cached response served across sessions makes one account's feed (and post
+// authorship) show up for another. Force dynamic + no-store on every response.
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"
+
+const NO_STORE = { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" }
+
 // Helper function to transform posts
 function transformPosts(posts: any[], user: any, savedPostIds: string[] = []) {
   return posts?.map((post: any) => {
@@ -145,9 +153,9 @@ export async function GET(request: NextRequest) {
       
       if (fallbackError) {
           console.error("[akurwas] fallback error:", fallbackError)
-          return NextResponse.json({ posts: [] })
+          return NextResponse.json({ posts: [] }, { headers: NO_STORE })
       }
-      return NextResponse.json({ posts: transformPosts(fallbackPosts || [], user, savedPostIds) })
+      return NextResponse.json({ posts: transformPosts(fallbackPosts || [], user, savedPostIds) }, { headers: NO_STORE })
     }
 
     console.log("[akurwas] Found posts:", posts?.length)
@@ -158,10 +166,10 @@ export async function GET(request: NextRequest) {
         limit,
         hasMore: posts?.length === limit,
       },
-    })
+    }, { headers: NO_STORE })
   } catch (error: any) {
     console.error("[akurwas] Error fetching posts:", error)
-    return NextResponse.json({ posts: [] })
+    return NextResponse.json({ posts: [] }, { headers: NO_STORE })
   }
 }
 

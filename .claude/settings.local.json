@@ -110,7 +110,14 @@
       "Bash(xargs ls -la)",
       "Bash(npx tsc *)",
       "Bash(awk '/CREATE TABLE.*products/,/\\\\\\);/' scripts/create-tables-v1.sql)",
-      "Bash(awk '/CREATE TABLE.*products/,/\\\\\\);/' scripts/fix-marketplace-products-and-services.sql)"
+      "Bash(awk '/CREATE TABLE.*products/,/\\\\\\);/' scripts/fix-marketplace-products-and-services.sql)",
+      "Bash(node /tmp/claude-1000/-mnt-c-Users-USER-light/ccb44635-1d66-461b-840e-d0afc85f60ab/scratchpad/diag.mjs)",
+      "Bash(command -v nvm)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node\" /tmp/claude-1000/-mnt-c-Users-USER-light/ccb44635-1d66-461b-840e-d0afc85f60ab/scratchpad/diag.mjs)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" --version)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" /tmp/claude-1000/-mnt-c-Users-USER-light/ccb44635-1d66-461b-840e-d0afc85f60ab/scratchpad/diag.mjs)",
+      "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" diag-temp.mjs)",
+      "Bash('/mnt/c/Program Files/nodejs/node.exe' -e ' *)"
     ]
   }
 }

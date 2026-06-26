@@ -2,6 +2,13 @@ import { createServerClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { validateEmail } from "@/lib/validation"
 
+// Per-user identity — must never be cached/shared across sessions, or one
+// account's profile (name/avatar) can surface for another in the same browser.
+export const dynamic = "force-dynamic"
+export const fetchCache = "force-no-store"
+
+const NO_STORE = { "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0" }
+
 export async function GET() {
   try {
     const supabase = await createServerClient()
@@ -50,7 +57,7 @@ export async function GET() {
         ...newProfile,
         email: user.email,
         isAdmin: false
-      })
+      }, { headers: NO_STORE })
     }
 
     // Unified admin check: profiles.is_admin OR an admin/super_admin role.
@@ -62,7 +69,7 @@ export async function GET() {
       ...profile,
       email: user.email,
       isAdmin,
-    })
+    }, { headers: NO_STORE })
   } catch (error) {
     console.error("[akurwas] Error in profile route:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

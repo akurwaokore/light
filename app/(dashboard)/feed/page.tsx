@@ -772,7 +772,7 @@ export default function FeedPage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/profile")
+      const res = await fetch("/api/profile", { cache: "no-store" })
       if (res.ok) setProfile(await res.json())
     } catch (err) {
       console.error("Error fetching profile:", err)
@@ -783,7 +783,7 @@ export default function FeedPage() {
     setLoading(true)
     try {
       const endpoint = view === "bookmarks" ? "/api/posts/saved" : "/api/posts"
-      const res = await fetch(endpoint, { credentials: "include" })
+      const res = await fetch(endpoint, { credentials: "include", cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setPosts(

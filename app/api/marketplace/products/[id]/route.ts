@@ -16,18 +16,31 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
     }
 
+    // NOTE: products.seller_id references auth.users, not profiles, so there is
+    // no PostgREST FK relationship to embed `seller:profiles(...)` (it errors
+    // PGRST200). Fetch the product plainly, then load the seller separately.
     const { data: product, error } = await supabase
       .from("products")
-      .select(`
-        *,
-        seller:profiles(id, display_name, photo_url)
-      `)
+      .select("*")
       .eq("id", id)
-      .single()
+      .maybeSingle()
 
     if (error) throw error
+    if (!product) {
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 })
+    }
 
-    return NextResponse.json({ product: normalizeMarketplaceProduct(product) })
+    let seller = null
+    if (product.seller_id) {
+      const { data: sellerProfile } = await supabase
+        .from("profiles")
+        .select("id, display_name, photo_url")
+        .eq("id", product.seller_id)
+        .maybeSingle()
+      seller = sellerProfile
+    }
+
+    return NextResponse.json({ product: normalizeMarketplaceProduct({ ...product, seller }) })
   } catch (error) {
     console.error("[akurwas] Error fetching product:", error)
     return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 })
