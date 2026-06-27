@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Users,
@@ -9,10 +8,9 @@ import {
   Calendar,
   Heart,
   Globe,
-  Star,
+  Gift,
   Trophy,
   CreditCard,
-  Play,
 } from "lucide-react"
 import { ScrollIndicator } from "@/components/landing/scroll-indicator"
 import { FloatingCard } from "@/components/landing/floating-card"
@@ -21,12 +19,11 @@ import { OnboardingAssistant } from "@/components/onboarding/onboarding-assistan
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { Motto } from "@/components/motto"
-import { VideoPlayerModal } from "@/components/landing/video-player-modal"
 import { PublicNavbar } from "@/components/layout/public-navbar"
-import { CmsPageRenderer } from "@/components/cms/page-renderer"
 import { PublicFooter } from "@/components/layout/public-footer"
 import { PublicHero } from "@/components/layout/public-hero"
 import { motion, useScroll, useTransform } from "framer-motion"
+import { ConnectedGallery } from "@/components/landing/connected-gallery"
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger)
@@ -45,7 +42,8 @@ const iconMap: { [key: string]: any } = {
   Calendar,
   Heart,
   Globe,
-  Star,
+  Gift,
+  Star: Gift,
   Trophy,
   CreditCard,
 }
@@ -69,7 +67,7 @@ const defaultFeatures = [
   {
     title: "Member Perks",
     description: "Enjoy exclusive discounts and offers from alumni-owned businesses worldwide.",
-    icon: "Star",
+    icon: "Gift",
   },
   {
     title: "Loyalty Rewards",
@@ -111,9 +109,8 @@ export default function LandingPage() {
     testimonials?: any;
     stats?: any;
     video_gallery?: any;
+    connected_gallery?: any;
   }>({})
-  const [selectedVideo, setSelectedVideo] = useState<any>(null)
-  const [homeTree, setHomeTree] = useState<any[]>([])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
@@ -147,13 +144,6 @@ export default function LandingPage() {
     }
 
     fetchCmsContent()
-
-    // If an admin has built a "home" page in the Page Builder, render that instead.
-    fetch("/api/cms/builder?slug=home")
-      .then((r) => r.json())
-      .then((d) => setHomeTree(d.tree || []))
-      .catch(() => {})
-
     // Dynamic import Lenis for smooth scrolling
     import("lenis").then(({ default: Lenis }) => {
       const lenis = new Lenis({
@@ -348,7 +338,21 @@ export default function LandingPage() {
             </motion.p>
           </div>
 
-          <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <ConnectedGallery
+            items={
+              cmsContent.connected_gallery?.items || [
+                { image_url: "/african-professionals-networking-event-nairobi-ken.jpg", alt: "Alumni networking event" },
+                { image_url: "/kenyan-university-graduation-ceremony-students-cel.jpg", alt: "Graduation celebration" },
+                { image_url: "/african-mentor-and-student-meeting-mentorship-prog.jpg", alt: "Mentorship session" },
+                { image_url: "/professional-networking-event-kenya-nairobi.jpg", alt: "Professional networking" },
+                { image_url: "/kenyan-school-campus-reunion-tour-alumni-visiting-.jpg", alt: "Campus reunion visit" },
+                { image_url: "/kenyan-community-service-volunteers-helping-childr.jpg", alt: "Community service activity" },
+                { image_url: "/elegant-african-gala-dinner-event-formal-attire-ke.jpg", alt: "Alumni gala dinner" },
+              ]
+            }
+          />
+
+          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {(cmsContent.features?.items || defaultFeatures).map((feature: any, index: number) => {
               const IconComponent = iconMap[feature.icon] || Briefcase
               return (

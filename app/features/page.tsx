@@ -7,14 +7,13 @@ import {
   Briefcase,
   Calendar,
   Heart,
-  Star,
+  Gift,
   Trophy,
   CreditCard,
   Users,
   Globe,
   ArrowRight,
   Check,
-  Sparkles,
 } from "lucide-react"
 import { PublicPageShell } from "@/components/landing/page-shell"
 import { Reveal, RevealGroup, RevealItem } from "@/components/landing/reveal"
@@ -22,7 +21,7 @@ import { SectionHeading } from "@/components/landing/section-heading"
 import { EditableMedia } from "@/components/cms/editable-media"
 import { usePageContent } from "@/hooks/use-page-content"
 
-const iconMap: Record<string, any> = { Briefcase, Calendar, Heart, Star, Trophy, CreditCard, Users, Globe }
+const iconMap: Record<string, any> = { Briefcase, Calendar, Heart, Gift, Trophy, CreditCard, Users, Globe, Star: Gift }
 
 const DEFAULTS = {
   headings: {
@@ -35,7 +34,7 @@ const DEFAULTS = {
       { title: "Professional Networking", description: "Connect with alumni across industries and leverage our global network for opportunities.", icon: "Briefcase" },
       { title: "Exclusive Events", description: "Access reunions, workshops, webinars and networking events all year round.", icon: "Calendar" },
       { title: "Give Back", description: "Support current students through scholarships and mentorship programs.", icon: "Heart" },
-      { title: "Member Perks", description: "Enjoy exclusive discounts from alumni-owned businesses worldwide.", icon: "Star" },
+      { title: "Member Perks", description: "Enjoy exclusive discounts from alumni-owned businesses worldwide.", icon: "Gift" },
       { title: "Loyalty Rewards", description: "Earn points for engagement and compete on the leaderboard for annual gifts.", icon: "Trophy" },
       { title: "Alumni Card", description: "Coming soon: spend loyalty points at participating alumni businesses.", icon: "CreditCard" },
     ],
@@ -196,7 +195,7 @@ export default function FeaturesPage() {
       {/* SECTION 5 — CTA */}
       <section className="container mx-auto px-4 pb-24">
         <Reveal className="relative overflow-hidden rounded-[2.5rem] border border-white/15 bg-gradient-to-br from-blue-600/30 via-purple-600/20 to-transparent p-10 text-center md:p-16">
-          <Sparkles className="mx-auto mb-4 h-8 w-8 text-blue-200" />
+          <Check className="mx-auto mb-4 h-8 w-8 text-blue-200" />
           <h2 className="font-serif text-3xl font-bold text-white md:text-4xl">{content.cta.title}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/70">{content.cta.subtitle}</p>
           <Button asChild size="lg" className="mt-8 rounded-full bg-white text-black hover:bg-white/90">

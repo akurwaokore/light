@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { motion } from "framer-motion"
-import { Sparkles, Heart } from "lucide-react"
+import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface MottoProps {
@@ -32,9 +32,9 @@ export function Motto({ variant, className }: MottoProps) {
           className="relative z-10"
         >
           <div className="mb-4 flex items-center justify-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-400" />
+            <span className="h-px w-8 bg-blue-300/60" />
             <span className="text-sm uppercase tracking-[0.3em] text-white/60">Our Motto</span>
-            <Sparkles className="h-5 w-5 text-blue-400" />
+            <span className="h-px w-8 bg-blue-300/60" />
           </div>
 
           <h2
@@ -103,9 +103,7 @@ export function Motto({ variant, className }: MottoProps) {
         <div className="absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
 
         <div className="relative z-10 flex flex-col items-center justify-center gap-3 md:flex-row md:gap-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-          </div>
+          <div className="h-px w-10 bg-primary/40" />
 
           <p
             className="text-center text-xl tracking-wide text-foreground md:text-2xl"

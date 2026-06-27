@@ -18,7 +18,7 @@ export const PAGE_DEFAULTS: Record<string, any> = {
         { title: "Professional Networking", description: "Connect with alumni across industries and leverage our global network for opportunities.", icon: "Briefcase" },
         { title: "Exclusive Events", description: "Access reunions, workshops, webinars and networking events all year round.", icon: "Calendar" },
         { title: "Give Back", description: "Support current students through scholarships and mentorship programs.", icon: "Heart" },
-        { title: "Member Perks", description: "Enjoy exclusive discounts from alumni-owned businesses worldwide.", icon: "Star" },
+        { title: "Member Perks", description: "Enjoy exclusive discounts from alumni-owned businesses worldwide.", icon: "Gift" },
         { title: "Loyalty Rewards", description: "Earn points for engagement and compete on the leaderboard for annual gifts.", icon: "Trophy" },
         { title: "Alumni Card", description: "Coming soon: spend loyalty points at participating alumni businesses.", icon: "CreditCard" },
       ],
@@ -252,6 +252,17 @@ export const GLOBAL_DEFAULTS: Record<string, any> = {
     title: "Everything You Need to Stay Connected",
     subtitle: "Our platform offers comprehensive tools to help you network, grow, and give back.",
     items: PAGE_DEFAULTS.features.pillars.items,
+  },
+  connected_gallery: {
+    items: [
+      { image_url: "/african-professionals-networking-event-nairobi-ken.jpg", alt: "Alumni networking event" },
+      { image_url: "/kenyan-university-graduation-ceremony-students-cel.jpg", alt: "Graduation celebration" },
+      { image_url: "/african-mentor-and-student-meeting-mentorship-prog.jpg", alt: "Mentorship session" },
+      { image_url: "/professional-networking-event-kenya-nairobi.jpg", alt: "Professional networking" },
+      { image_url: "/kenyan-school-campus-reunion-tour-alumni-visiting-.jpg", alt: "Campus reunion visit" },
+      { image_url: "/kenyan-community-service-volunteers-helping-childr.jpg", alt: "Community service activity" },
+      { image_url: "/elegant-african-gala-dinner-event-formal-attire-ke.jpg", alt: "Alumni gala dinner" },
+    ],
   },
   testimonials: {
     title: "Trusted by Alumni Worldwide",

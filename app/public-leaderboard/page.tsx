@@ -14,10 +14,10 @@ import {
   CreditCard,
   Users,
   Gift,
-  Sparkles,
   ArrowRight,
   Loader2,
   TrendingUp,
+  BadgeCheck,
 } from "lucide-react"
 import { PublicPageShell } from "@/components/landing/page-shell"
 import { Reveal, RevealGroup, RevealItem } from "@/components/landing/reveal"
@@ -348,7 +348,7 @@ export default function PublicLeaderboardPage() {
 
         <RevealGroup className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {content.earn.items.map((item: any, i: number) => {
-            const Icon = earnIconMap[item.icon] || Sparkles
+            const Icon = earnIconMap[item.icon] || BadgeCheck
             return (
               <RevealItem key={i}>
                 <div className="group h-full rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-white/30 hover:bg-white/[0.07]">
@@ -392,7 +392,7 @@ export default function PublicLeaderboardPage() {
       {/* SECTION 5 — CTA band */}
       <section className="container mx-auto px-4 pb-24">
         <Reveal className="relative overflow-hidden rounded-[2.5rem] border border-white/15 bg-gradient-to-br from-blue-600/30 via-purple-600/20 to-transparent p-10 text-center md:p-16">
-          <Sparkles className="mx-auto mb-4 h-8 w-8 text-blue-200" />
+          <BadgeCheck className="mx-auto mb-4 h-8 w-8 text-blue-200" />
           <h2 className="font-serif text-3xl font-bold text-white md:text-4xl">{content.cta.title}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/70">{content.cta.subtitle}</p>
           <Button asChild size="lg" className="mt-8 rounded-full bg-white text-black hover:bg-white/90">

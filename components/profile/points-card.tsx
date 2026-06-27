@@ -63,9 +63,9 @@ export function PointsCard({ userId, initialPoints = 0 }: PointsCardProps) {
 
   const getRankBadge = () => {
     if (!rank) return null
-    if (rank === 1) return <Badge className="bg-yellow-500 hover:bg-yellow-600">🏆 Champion</Badge>
-    if (rank <= 3) return <Badge className="bg-blue-500 hover:bg-blue-600">🥇 Top 3</Badge>
-    if (rank <= 10) return <Badge variant="secondary">⭐ Top 10</Badge>
+    if (rank === 1) return <Badge className="bg-yellow-500 hover:bg-yellow-600">Champion</Badge>
+    if (rank <= 3) return <Badge className="bg-blue-500 hover:bg-blue-600">Top 3</Badge>
+    if (rank <= 10) return <Badge variant="secondary">Top 10</Badge>
     return <Badge variant="outline">#{rank}</Badge>
   }
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Play, ArrowRight, Sparkles, Film } from "lucide-react"
+import { Play, ArrowRight, Film, BadgeCheck } from "lucide-react"
 import { PublicPageShell } from "@/components/landing/page-shell"
 import { Reveal, RevealGroup, RevealItem } from "@/components/landing/reveal"
 import { SectionHeading } from "@/components/landing/section-heading"
@@ -281,7 +281,7 @@ export default function VideoGalleryPage() {
       {/* SECTION 5 — CTA */}
       <section className="container mx-auto px-4 pb-24">
         <Reveal className="relative overflow-hidden rounded-[2.5rem] border border-white/15 bg-gradient-to-br from-blue-600/30 via-purple-600/20 to-transparent p-10 text-center md:p-16">
-          <Sparkles className="mx-auto mb-4 h-8 w-8 text-blue-200" />
+          <BadgeCheck className="mx-auto mb-4 h-8 w-8 text-blue-200" />
           <h2 className="font-serif text-3xl font-bold text-white md:text-4xl">{content.cta.title}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/70">{content.cta.subtitle}</p>
           <Button asChild size="lg" className="mt-8 rounded-full bg-white text-black hover:bg-white/90">

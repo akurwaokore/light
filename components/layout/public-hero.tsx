@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Sparkles, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { AnimatedText } from "@/components/landing/animated-text"
@@ -79,7 +79,7 @@ export function PublicHero({
           <div className="flex-1 text-center lg:text-left">
             {badge && (
               <div className="hero-text mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white backdrop-blur-sm">
-                <Sparkles className="h-4 w-4" />
+                <span className="h-2 w-2 rounded-full bg-white/70" />
                 {badge}
               </div>
             )}

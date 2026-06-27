@@ -74,6 +74,7 @@ export default function CMSPage() {
   const [heroPage, setHeroPage] = useState("home")
   const heroSectionName = (slug: string) => (slug === "home" ? "hero" : `hero:${slug}`)
   const [features, setFeatures] = useState<any[]>([])
+  const [connectedGallery, setConnectedGallery] = useState<any[]>([])
   const [testimonials, setTestimonials] = useState<any[]>([])
   const [stats, setStats] = useState<any[]>([])
   const [videoGallery, setVideoGallery] = useState<any[]>([])
@@ -127,6 +128,7 @@ export default function CMSPage() {
         const pick = (name: string, fallback: any[]) =>
           Array.isArray(byName[name]?.items) && byName[name].items.length ? byName[name].items : fallback
         setFeatures(pick('features', PAGE_DEFAULTS.features.pillars.items))
+        setConnectedGallery(pick('connected_gallery', GLOBAL_DEFAULTS.connected_gallery.items))
         setTestimonials(pick('testimonials', PAGE_DEFAULTS.testimonials.grid.items))
         setStats(pick('stats', GLOBAL_DEFAULTS.stats.items))
         setVideoGallery(pick('video_gallery', GLOBAL_DEFAULTS.video_gallery.items))
@@ -219,7 +221,7 @@ export default function CMSPage() {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'hero' | 'feature' | 'video') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'hero' | 'feature' | 'video' | 'connected') => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -331,6 +333,7 @@ export default function CMSPage() {
                 <TabsTrigger value="hero" className="gap-2 shrink-0"><Layout className="h-4 w-4" />Hero</TabsTrigger>
                 <TabsTrigger value="pages" className="gap-2 shrink-0"><FileText className="h-4 w-4" />Pages</TabsTrigger>
                 <TabsTrigger value="features" className="gap-2 shrink-0"><MessageSquare className="h-4 w-4" />Features</TabsTrigger>
+                <TabsTrigger value="connected-gallery" className="gap-2 shrink-0"><ImagePlus className="h-4 w-4" />Home Gallery</TabsTrigger>
                 <TabsTrigger value="testimonials" className="gap-2 shrink-0"><ImageIcon className="h-4 w-4" />Testimonials</TabsTrigger>
                 <TabsTrigger value="stats" className="gap-2 shrink-0"><BarChart3 className="h-4 w-4" />Stats</TabsTrigger>
                 <TabsTrigger value="video" className="gap-2 shrink-0"><Video className="h-4 w-4" />Video Gallery</TabsTrigger>
@@ -494,6 +497,74 @@ export default function CMSPage() {
                       </div>
                     ))}
                     <div className="flex justify-end pt-4"><Button onClick={() => saveSection('features', { items: features })} disabled={saving} className="gap-2">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Features</Button></div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="connected-gallery" className="space-y-6">
+                <Card>
+                  <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <CardTitle>Home Scroll Gallery</CardTitle>
+                      <CardDescription>Seven pinned images shown after the “Everything You Need to Stay Connected” heading on the home page.</CardDescription>
+                    </div>
+                    <Button
+                      onClick={() => addArrayItem(setConnectedGallery, { image_url: "/placeholder.jpg", alt: "Gallery image" })}
+                      size="sm"
+                      className="gap-2 w-full sm:w-auto"
+                      disabled={connectedGallery.length >= 7}
+                    >
+                      <Plus className="h-4 w-4" /> Add Image
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Use up to 7 images. Reorder them to control the scroll sequence on the home page.</p>
+                    {connectedGallery.map((item, idx) => (
+                      <div key={idx} className="relative space-y-4 rounded-lg border p-4">
+                        <div className="absolute right-2 top-2 flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => moveItem(setConnectedGallery, idx, 'up')} disabled={idx === 0}><MoveUp className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => moveItem(setConnectedGallery, idx, 'down')} disabled={idx === connectedGallery.length - 1}><MoveDown className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeArrayItem(setConnectedGallery, idx)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+
+                        <div className="flex flex-col gap-4 pt-6 md:flex-row md:items-start">
+                          <div className="relative h-28 w-full overflow-hidden rounded-lg border bg-muted md:w-48">
+                            {item.image_url ? (
+                              <Image src={item.image_url} alt={item.alt || `Gallery ${idx + 1}`} fill className="object-cover" unoptimized />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-xs text-muted-foreground">No image</div>
+                            )}
+                          </div>
+                          <div className="flex-1 space-y-3">
+                            <div className="space-y-1">
+                              <Label>Alt Text</Label>
+                              <Input value={item.alt || ""} onChange={(e) => updateArrayItem(setConnectedGallery, idx, 'alt', e.target.value)} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Image URL</Label>
+                              <Input value={item.image_url || ""} onChange={(e) => updateArrayItem(setConnectedGallery, idx, 'image_url', e.target.value)} />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Upload Replacement</Label>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                className="h-9 py-1 text-xs"
+                                onChange={async (e) => {
+                                  const url = await handleImageUpload(e, 'connected')
+                                  if (url) updateArrayItem(setConnectedGallery, idx, 'image_url', url)
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex justify-end pt-4">
+                      <Button onClick={() => saveSection('connected_gallery', { items: connectedGallery })} disabled={saving} className="gap-2">
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Home Gallery
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
