@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MembershipCard } from "@/components/membership/membership-card"
+import { getNormalizedMembership } from "@/lib/membership"
 import { PointsCard } from "@/components/profile/points-card"
 import { MpesaCheckout } from "@/components/payments/mpesa-checkout"
 import { ImageCropper } from "@/components/ui/image-cropper"
@@ -182,18 +183,16 @@ export default function ProfilePage() {
   }
 
   const getMembershipStatus = () => {
-    if (!profile?.membership_type) return null
-
-    const isLifetime = profile.membership_type === "lifetime"
-    const expiryDate = profile.membership_expiry ? new Date(profile.membership_expiry) : null
-    const isActive = isLifetime ? true : expiryDate ? expiryDate >= new Date() : false
+    const normalized = getNormalizedMembership(profile)
+    if (!normalized.hasMembership) return null
 
     return {
-      type: profile.membership_type,
-      isLifetime,
-      isActive,
-      expiryDate,
-      startDate: profile.membership_start_date ? new Date(profile.membership_start_date) : null,
+      type: normalized.type,
+      tier: normalized.tier,
+      isLifetime: normalized.isLifetime,
+      isActive: normalized.isActive,
+      expiryDate: normalized.expiryDate,
+      startDate: normalized.startDate,
     }
   }
 
@@ -729,10 +728,10 @@ export default function ProfilePage() {
                   <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="font-semibold font-[Belleza]">No Active Membership</h3>
                   <p className="text-muted-foreground mt-1 font-[Alegreya]">
-                    Purchase a membership to get your digital card and access all benefits.
+                    Go to the subscription page to activate your card and manage your membership plan.
                   </p>
                   <Button asChild className="mt-4">
-                    <Link href="/payments">Get Membership</Link>
+                    <Link href="/payments">Open Subscription Page</Link>
                   </Button>
                 </div>
               )}
@@ -752,6 +751,7 @@ export default function ProfilePage() {
               <MembershipCard
                 member={{
                   ...profile,
+                  membership_tier: profile.membership_tier,
                   membership_type: profile.membership_type,
                   membership_start_date: profile.membership_start_date,
                   membership_expiry: profile.membership_expiry,

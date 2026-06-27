@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { getNormalizedMembership } from "@/lib/membership"
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     const alumniId = `LA-${member.id.substring(0, 8).toUpperCase()}`
-    const expiryDate = member.membership_expiry ? new Date(member.membership_expiry) : null
+    const membership = getNormalizedMembership(member)
+    const { expiryDate, type, hasMembership } = membership
 
     // PKPass structure (simplified - in production you'd sign this properly)
     // Apple Wallet requires signing with Apple certificates
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
           {
             key: "tier",
             label: "TIER",
-            value: member.membership_tier || "Standard",
+            value: type === "lifetime" ? "Lifetime" : hasMembership ? "Annual" : "No Membership",
           },
         ],
         backFields: [

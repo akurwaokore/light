@@ -20,6 +20,7 @@ import {
 import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
+import { getNormalizedMembership } from "@/lib/membership"
 
 const membershipTiers = [
   {
@@ -168,17 +169,15 @@ export default function PaymentsPage() {
   }
 
   const getCurrentMembershipStatus = () => {
-    if (!profile?.membership_tier || profile.membership_tier === "free") return null
-
-    const isLifetime = profile.membership_tier === "platinum" // mapping lifetime to platinum for now
-    const expiryDate = profile.membership_expiry ? new Date(profile.membership_expiry) : null
-    const isActive = isLifetime ? true : expiryDate ? expiryDate >= new Date() : false
+    const normalized = getNormalizedMembership(profile)
+    if (!normalized.hasMembership) return null
 
     return {
-      tier: profile.membership_tier,
-      isLifetime,
-      isActive,
-      expiryDate,
+      tier: normalized.tier,
+      type: normalized.type,
+      isLifetime: normalized.isLifetime,
+      isActive: normalized.isActive,
+      expiryDate: normalized.expiryDate,
     }
   }
 
@@ -251,8 +250,9 @@ export default function PaymentsPage() {
       <div className="grid gap-6 md:grid-cols-2">
         {membershipTiers.map((tier) => {
           const Icon = tier.icon
-          const isCurrentTier = (tier.id === "annual" && profile?.membership_tier === "silver") || 
-                               (tier.id === "lifetime" && profile?.membership_tier === "platinum")
+          const isCurrentTier =
+            (tier.id === "annual" && membershipStatus?.type === "annual") ||
+            (tier.id === "lifetime" && membershipStatus?.isLifetime)
 
           return (
             <Card key={tier.id} className={`relative transition-all ${tier.popular ? "border-primary shadow-lg" : ""}`}>

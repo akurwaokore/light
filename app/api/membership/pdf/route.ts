@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
+import { getNormalizedMembership } from "@/lib/membership"
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,9 +15,8 @@ export async function POST(request: NextRequest) {
     }
 
     const alumniId = `LA-${member.id.substring(0, 8).toUpperCase()}`
-    const today = new Date()
-    const expiryDate = member.membership_expiry ? new Date(member.membership_expiry) : null
-    const isActive = expiryDate ? expiryDate >= today : false
+    const membership = getNormalizedMembership(member)
+    const { expiryDate, isActive, hasMembership } = membership
 
     // Generate PDF using a simple HTML to PDF approach
     // For production, you would use a proper PDF library like @react-pdf/renderer or puppeteer
@@ -42,8 +42,8 @@ export async function POST(request: NextRequest) {
               padding: 4px 12px; 
               border-radius: 20px; 
               font-size: 12px;
-              background: ${isActive ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)"};
-              color: ${isActive ? "#6ee7b7" : "#fca5a5"};
+              background: ${isActive ? "rgba(16, 185, 129, 0.2)" : hasMembership ? "rgba(245, 158, 11, 0.2)" : "rgba(239, 68, 68, 0.2)"};
+              color: ${isActive ? "#6ee7b7" : hasMembership ? "#fcd34d" : "#fca5a5"};
             }
             .member-info { margin-top: 40px; }
             .name { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
           <div class="card">
             <div class="header">
               <div class="logo">LIGHT ALUMNI<br><span style="opacity: 0.6; font-size: 12px;">CONNECT</span></div>
-              <div class="status">${isActive ? "ACTIVE" : "EXPIRED"}</div>
+              <div class="status">${isActive ? "ACTIVE" : hasMembership ? "EXPIRED" : "UNPAID"}</div>
             </div>
             <div class="member-info">
               <div class="name">${member.display_name}</div>

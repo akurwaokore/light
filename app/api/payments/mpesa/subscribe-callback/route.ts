@@ -34,8 +34,17 @@ export async function POST(request: NextRequest) {
       // Grant membership.
       const tier = tx.metadata?.tier || "gold"
       const lifetime = !!tx.metadata?.lifetime
+      const startDate = new Date().toISOString()
       const expiry = lifetime ? null : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-      await admin.from("profiles").update({ membership_tier: tier, membership_expiry: expiry }).eq("id", tx.user_id)
+      await admin
+        .from("profiles")
+        .update({
+          membership_tier: tier,
+          membership_type: lifetime ? "lifetime" : "annual",
+          membership_start_date: startDate,
+          membership_expiry: expiry,
+        })
+        .eq("id", tx.user_id)
 
       await admin.rpc("award_points", {
         p_user_id: tx.user_id, p_points: 100, p_type: "earn",

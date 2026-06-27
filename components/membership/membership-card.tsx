@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Download, CreditCard, Smartphone, FileText, CalendarDays, GraduationCap, School, CircleCheckBig, CircleDashed } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getNormalizedMembership } from "@/lib/membership"
 import Image from "next/image"
 
 interface MembershipCardProps {
@@ -17,6 +18,7 @@ interface MembershipCardProps {
     photo_url?: string
     campus?: string
     graduation_year?: number
+    membership_tier?: string | null
     membership_type?: "annual" | "lifetime" | null
     membership_start_date?: string
     membership_expiry?: string
@@ -33,14 +35,8 @@ export function MembershipCard({ member, className, showActions = true }: Member
   // Generate Alumni ID from user ID
   const alumniId = `LA-${member.id.substring(0, 8).toUpperCase()}`
 
-  const today = new Date()
-  const isLifetime = member.membership_type === "lifetime"
-  const expiryDate = member.membership_expiry ? new Date(member.membership_expiry) : null
-  const startDate = member.membership_start_date ? new Date(member.membership_start_date) : null
-  const hasMembership = member.membership_type !== null && member.membership_type !== undefined
-
-  // Lifetime members are always active, annual members check expiry
-  const isActive = isLifetime ? true : expiryDate ? expiryDate >= today : false
+  const membership = getNormalizedMembership(member)
+  const { isLifetime, expiryDate, startDate, hasMembership, isActive, type } = membership
   const memberSince = startDate || (member.created_at ? new Date(member.created_at) : new Date())
 
   // QR code should open a verification page, not raw JSON.
@@ -52,7 +48,7 @@ export function MembershipCard({ member, className, showActions = true }: Member
   const schoolName = member.campus || "Light Academy"
   const graduationYear = member.graduation_year || "N/A"
   const paymentStatus = hasMembership && isActive ? "Paid" : hasMembership ? "Expired" : "Unpaid"
-  const membershipLabel = isLifetime ? "Lifetime" : member.membership_type === "annual" ? "Annual" : "No Membership"
+  const membershipLabel = isLifetime ? "Lifetime" : type === "annual" ? "Annual" : "No Membership"
 
   // Format dates
   const formatDate = (date: Date | string | null | undefined) => {

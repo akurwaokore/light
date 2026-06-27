@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CheckCircle2, XCircle, Calendar, GraduationCap, Building2, Award as IdCard, Infinity, CircleDollarSign, ShieldCheck } from "lucide-react"
+import { getNormalizedMembership } from "@/lib/membership"
 import Image from "next/image"
 
 interface VerifyPageProps {
@@ -21,13 +22,8 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
     notFound()
   }
 
-  const today = new Date()
-  const isLifetime = member.membership_type === "lifetime"
-  const expiryDate = member.membership_expiry ? new Date(member.membership_expiry) : null
-  const hasMembership = member.membership_type !== null && member.membership_type !== undefined
-
-  // Lifetime members are always active, annual members check expiry
-  const isActive = hasMembership ? (isLifetime ? true : expiryDate ? expiryDate >= today : false) : false
+  const membership = getNormalizedMembership(member)
+  const { isLifetime, expiryDate, hasMembership, isActive, type } = membership
 
   const alumniId = `LA-${member.id.substring(0, 8).toUpperCase()}`
   const schoolName = member.campus || "Light Academy"
@@ -171,7 +167,7 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
               <div>
                 <p className="text-xs uppercase tracking-wider text-slate-500">Membership Type</p>
                 <p className="font-semibold text-slate-900 font-[Alegreya]">
-                  {isLifetime ? "Lifetime Member" : member.membership_type === "annual" ? "Annual Member" : "No Membership"}
+                  {isLifetime ? "Lifetime Member" : type === "annual" ? "Annual Member" : "No Membership"}
                 </p>
               </div>
             </div>
