@@ -74,7 +74,7 @@ export function AppHeader() {
   }
 
   return (
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-2 md:gap-4 border-b border-border bg-background px-2 md:px-6 overflow-hidden">
+      <header className="sticky top-0 z-50 flex h-16 items-center gap-1 border-b border-border bg-background px-2 sm:gap-2 md:gap-4 md:px-6 overflow-hidden">
         <SidebarTrigger className="-ml-1 shrink-0" />
         
         {/* Home Button for Mobile/Desktop */}
@@ -85,14 +85,14 @@ export function AppHeader() {
           <span className="font-serif font-bold hidden sm:inline-block whitespace-nowrap">Light Alumni</span>
         </Link>
 
-      <div className="flex flex-1 items-center gap-4">
+      <div className="flex min-w-0 flex-1 items-center gap-4">
         <div className="relative hidden max-w-md flex-1 md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input type="search" placeholder="Search alumni, events, clubs..." className="pl-10" />
         </div>
       </div>
 
-      <div className="flex items-center gap-1 md:gap-3">
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-1 md:gap-3">
         {/* Points Display - Desktop */}
         {profile && (
           <Link href="/leaderboard" className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all group">
@@ -110,7 +110,7 @@ export function AppHeader() {
           {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
 
-        <div className="flex items-center">
+        <div className="hidden items-center sm:flex">
           <MessageBell />
         </div>
         <div className="flex items-center">

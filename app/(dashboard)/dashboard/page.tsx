@@ -121,7 +121,7 @@ export default function DashboardPage() {
 
   if (!hasMounted || loading) {
     return (
-      <div className="container mx-auto space-y-8 p-6">
+      <div className="container mx-auto space-y-8 overflow-x-hidden px-4 py-6 sm:px-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
             <Skeleton className="h-10 w-64" />
@@ -149,7 +149,7 @@ export default function DashboardPage() {
   const progress = Math.min(100, (pointsNum / loyaltyPoints.milestone) * 100)
 
   return (
-    <div className="container mx-auto space-y-8 p-4 md:p-8 animate-in fade-in duration-700">
+    <div className="container mx-auto space-y-8 overflow-x-hidden px-4 py-4 sm:px-6 md:px-8 md:py-8 animate-in fade-in duration-700">
       {profile?.isAdmin && (
         <Alert className="glass-strong border-primary/20 bg-primary/5">
           <ShieldCheck className="h-4 w-4 text-primary" />
@@ -185,7 +185,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-8 lg:grid-cols-12">
         {/* Main Content Column */}
-        <div className="lg:col-span-8 space-y-8">
+        <div className="min-w-0 space-y-8 lg:col-span-8">
           
           <Motto variant="dashboard" />
 
@@ -195,7 +195,7 @@ export default function DashboardPage() {
               <Trophy className="h-24 w-24 text-amber-600 rotate-12" />
             </div>
             <CardContent className="p-6 md:p-8 relative z-10">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-amber-600" />
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="w-full lg:max-w-sm space-y-3">
+                <div className="w-full space-y-3 lg:max-w-sm">
                   <div className="flex justify-between text-sm font-medium">
                     <span>Next Milestone: {loyaltyPoints.milestone} pts</span>
                     <span className="text-amber-600">{Math.round(progress)}%</span>
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <Button className="w-full lg:w-auto bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-lg shadow-amber-600/20" asChild>
+                <Button className="w-full sm:w-auto lg:w-auto bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-lg shadow-amber-600/20" asChild>
                   <Link href="/leaderboard">View Leaderboard</Link>
                 </Button>
               </div>
@@ -252,12 +252,12 @@ export default function DashboardPage() {
 
           {/* Social Feed Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif text-2xl font-bold flex items-center gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="flex items-center gap-2 font-serif text-2xl font-bold">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 Community Feed
               </h2>
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" size="sm" className="w-full sm:w-auto" asChild>
                 <Link href="/feed">View Full Feed <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
@@ -266,7 +266,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Sidebar Column */}
-        <div className="lg:col-span-4 space-y-8">
+        <div className="min-w-0 space-y-8 lg:col-span-4">
           
           {/* Career & Commerce Card */}
           <Card className="glass-strong border-primary/20 overflow-hidden">

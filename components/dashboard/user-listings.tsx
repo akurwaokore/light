@@ -169,7 +169,7 @@ export function UserListings() {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground sm:gap-4">
               <span className="flex items-center gap-1.5 font-medium px-2 py-1 rounded-full bg-muted/50">
                 <Eye className="h-3 w-3" />
                 {item.views} views
@@ -256,11 +256,11 @@ export function UserListings() {
         <Package className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
         <p className="text-muted-foreground font-medium">No listings found.</p>
         <p className="text-xs text-muted-foreground/60 mb-4">Start selling your products or offering services to the community.</p>
-        <div className="flex justify-center gap-2">
-          <Button variant="outline" size="sm" className="rounded-xl" asChild>
+        <div className="flex flex-col justify-center gap-2 sm:flex-row">
+          <Button variant="outline" size="sm" className="w-full rounded-xl sm:w-auto" asChild>
             <Link href="/marketplace?action=add-product">Add Product</Link>
           </Button>
-          <Button variant="outline" size="sm" className="rounded-xl" asChild>
+          <Button variant="outline" size="sm" className="w-full rounded-xl sm:w-auto" asChild>
             <Link href="/marketplace?action=add-service">Add Service</Link>
           </Button>
         </div>
@@ -273,7 +273,7 @@ export function UserListings() {
       {/* Products Section */}
       {products.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
+          <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
               <h3 className="font-bold text-lg">My Products</h3>
@@ -287,7 +287,7 @@ export function UserListings() {
       {/* Services Section */}
       {services.length > 0 && (
         <div className="space-y-4 pt-4">
-          <div className="flex items-center justify-between px-1 border-t pt-6">
+          <div className="flex flex-col gap-2 border-t px-1 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Wrench className="h-5 w-5 text-accent" />
               <h3 className="font-bold text-lg">My Services</h3>

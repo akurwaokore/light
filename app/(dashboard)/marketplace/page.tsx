@@ -201,17 +201,17 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-4 md:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+    <div className="container mx-auto space-y-6 overflow-x-hidden px-4 py-4 sm:px-6 md:py-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="min-w-0 xl:max-w-md">
           <h1 className="font-serif text-2xl font-bold sm:text-3xl">Alumni Marketplace</h1>
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">Buy and sell with the alumni community</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-stretch gap-2 xl:w-auto xl:justify-end">
           <CartSheet />
           <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> Add Product</Button>
+              <Button className="min-w-0 flex-1 sm:flex-none"><Plus className="mr-2 h-4 w-4 shrink-0" /> <span className="truncate">Add Product</span></Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-[600px]">
               <ProductFormComponent
@@ -226,7 +226,7 @@ export default function MarketplacePage() {
 
           <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline"><Plus className="mr-2 h-4 w-4" /> Add Service</Button>
+              <Button variant="outline" className="min-w-0 flex-1 sm:flex-none"><Plus className="mr-2 h-4 w-4 shrink-0" /> <span className="truncate">Add Service</span></Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-[600px]">
               <ProductFormComponent
@@ -259,8 +259,8 @@ export default function MarketplacePage() {
         />
       )}
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1 max-w-md">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_200px] lg:items-center">
+        <div className="relative min-w-0 lg:max-w-none">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search marketplace..."
@@ -270,7 +270,7 @@ export default function MarketplacePage() {
           />
         </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full md:w-[200px]">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
@@ -283,7 +283,7 @@ export default function MarketplacePage() {
           </SelectContent>
         </Select>
         <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-          <SelectTrigger className="w-full md:w-[180px]">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Currency" />
           </SelectTrigger>
           <SelectContent>
@@ -314,7 +314,7 @@ export default function MarketplacePage() {
         <div className="py-12 text-center">
           <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground/50" />
           <h3 className="mt-4 font-semibold">No listings found</h3>
-          <p className="text-muted-foreground">Try adjusting your search or filters</p>
+          <p className="mx-auto max-w-md text-muted-foreground">Try adjusting your search or filters</p>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -373,17 +373,17 @@ export default function MarketplacePage() {
                       <Clock className="h-3 w-3" /> {formatTimeAgo(product.created_at)}
                     </span>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                     <Button
-                      className="min-w-[8rem] flex-1 rounded-xl shadow-md active:scale-95 transition-transform"
+                      className="w-full min-w-0 flex-1 rounded-xl shadow-md transition-transform active:scale-95"
                       disabled={product.quantity === 0}
                       onClick={() => handleAddToCart(product)}
                     >
                       <ShoppingBag className="mr-2 h-4 w-4" />
                       {product.quantity === 0 ? "Out of stock" : "Add to Cart"}
                     </Button>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShowInterest(product)} title="Show interest — notify the seller">
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShowInterest(product)} title="Show interest - notify the seller">
                         <Heart className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="icon" className="rounded-xl" disabled={product.quantity === 0} onClick={() => handleRedeem(product)} title="Redeem with loyalty points">

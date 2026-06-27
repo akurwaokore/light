@@ -865,9 +865,9 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-xl space-y-4 p-3 md:p-6">
+    <div className="container mx-auto max-w-xl space-y-4 overflow-x-hidden px-3 py-3 md:px-6 md:py-6">
       {/* Header */}
-      <div className="flex items-end justify-between px-1">
+      <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">Community</h1>
           <p className="text-sm text-muted-foreground">Catch up with your alumni network</p>
@@ -911,7 +911,7 @@ export default function FeedPage() {
               fetchPosts()
             }}
           >
-            New posts available — tap to refresh
+            New posts available - tap to refresh
           </Button>
         </div>
       )}
@@ -920,14 +920,14 @@ export default function FeedPage() {
       {view === "feed" && (
         <Card className="border-none bg-card shadow-sm ring-1 ring-border/60">
           <CardContent className="p-4">
-            <div className="flex gap-3">
-              <Avatar className="h-10 w-10">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Avatar className="h-10 w-10 shrink-0">
                 <AvatarImage src={profile?.photo_url || "/placeholder.svg"} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {profile?.display_name?.split(" ").map((n: any) => n[0]).join("") || "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 space-y-3">
+              <div className="min-w-0 flex-1 space-y-3">
                 <Textarea
                   placeholder={`What's on your mind, ${profile?.display_name?.split(" ")[0] || "Alumnus"}?`}
                   value={newPostContent}
@@ -953,8 +953,8 @@ export default function FeedPage() {
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-3 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-3">
                     <label className="flex cursor-pointer items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary">
                       <ImageIcon className="h-4 w-4" /> Photo
                       <input type="file" accept="image/*" className="hidden" onChange={(e) => handleMediaUpload(e, "image")} />
@@ -965,10 +965,10 @@ export default function FeedPage() {
                     </label>
                     <EmojiPicker onSelect={(emoji) => setNewPostContent((c) => c + emoji)} />
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs">
+                        <Button variant="ghost" size="sm" className="h-8 justify-center rounded-full text-xs sm:justify-start">
                           {visibility === "public" ? (
                             <Globe className="mr-1.5 h-3.5 w-3.5" />
                           ) : visibility === "friends" ? (
@@ -994,7 +994,7 @@ export default function FeedPage() {
                     <Button
                       disabled={(!newPostContent.trim() && !newPostImage && !newPostVideo) || isPosting}
                       onClick={handleCreatePost}
-                      className="h-9 rounded-full px-5"
+                      className="h-9 w-full rounded-full px-5 sm:w-auto"
                     >
                       {isPosting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Send className="mr-1.5 h-4 w-4" />}
                       Post

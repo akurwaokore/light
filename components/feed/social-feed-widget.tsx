@@ -197,9 +197,9 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
         <CardHeader>
           <h3 className="font-serif text-lg font-semibold">Share with Community</h3>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Avatar>
+        <CardContent className="px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <Avatar className="h-10 w-10 shrink-0 self-start">
               <AvatarImage src={profile.photo_url || "/placeholder.svg"} alt={profile.display_name} />
               <AvatarFallback>
                 {profile.display_name
@@ -208,21 +208,21 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                   .join("") || "U"}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-3">
+            <div className="min-w-0 flex-1 space-y-3">
               <Textarea
                 placeholder="Share something with your alumni community..."
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
                 className="min-h-[80px] resize-none glass"
               />
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="ghost" size="sm" className="justify-start">
                     <ImageIcon className="mr-2 h-4 w-4" />
                     Photo
                   </Button>
                   <Select value={newPostVisibility} onValueChange={setNewPostVisibility}>
-                    <SelectTrigger className="w-32 h-9 glass">
+                    <SelectTrigger className="h-9 w-full glass sm:w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -247,7 +247,7 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={handleCreatePost} disabled={!newPostContent.trim()}>
+                <Button onClick={handleCreatePost} disabled={!newPostContent.trim()} className="w-full sm:w-auto">
                   <Send className="mr-2 h-4 w-4" />
                   Post
                 </Button>
@@ -312,7 +312,7 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                     </DropdownMenu>
                   </div>
                 </CardHeader>
-                <CardContent className="pb-3">
+                <CardContent className="min-w-0 pb-3">
                   <p className="whitespace-pre-wrap break-words">{post.content}</p>
                   {post.image_url && (
                     <img src={post.image_url || "/placeholder.svg"} alt="Post" className="mt-3 h-auto max-w-full rounded-lg" />
@@ -346,8 +346,8 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                     </div>
                   )}
                   <Separator />
-                  <div className="flex w-full items-center justify-between">
-                    <div className="flex gap-2">
+                  <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap gap-2">
                       <div className="relative">
                         <Button
                           variant="ghost"
@@ -383,7 +383,7 @@ export function SocialFeedWidget({ profile }: { profile: any }) {
                         </Link>
                       </Button>
                     </div>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="self-start sm:self-auto">
                       <Share2 className="mr-1 h-4 w-4" />
                       Share
                     </Button>
