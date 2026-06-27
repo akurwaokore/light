@@ -314,7 +314,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     {contact.name}
                   </p>
                   {contact.phone ? (
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                       <a href={`tel:${contact.phone}`} className="flex items-center gap-2 font-medium text-primary">
                         <Phone className="h-4 w-4" />
                         {contact.phone}
@@ -324,9 +324,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                           href={`https://wa.me/${contact.whatsapp}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white"
+                          className="inline-flex items-center justify-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 sm:py-1 sm:text-xs"
                         >
-                          WhatsApp
+                          <MessageSquare className="h-4 w-4" />
+                          Chat on WhatsApp
                         </a>
                       )}
                     </div>

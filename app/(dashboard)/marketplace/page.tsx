@@ -201,7 +201,7 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="container mx-auto space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-bold sm:text-3xl">Alumni Marketplace</h1>
@@ -346,49 +346,53 @@ export default function MarketplacePage() {
                   </div>
                 </Link>
                 <CardContent className="p-4">
-                  <Badge variant="secondary" className="mb-2">
-                    {getCategoryLabel(product.category)}
-                  </Badge>
-                  {product.product_type === "service" && (
-                    <Badge variant="outline" className="mb-2 ml-2">
-                      <Package className="mr-1 h-3 w-3" /> Service
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">
+                      {getCategoryLabel(product.category)}
                     </Badge>
-                  )}
+                    {product.product_type === "service" && (
+                      <Badge variant="outline">
+                        <Package className="mr-1 h-3 w-3" /> Service
+                      </Badge>
+                    )}
+                  </div>
                   <Link href={`/marketplace/${product.id}`}>
-                    <h3 className="font-semibold line-clamp-1 hover:text-primary">{product.title}</h3>
+                    <h3 className="mt-2 font-semibold leading-snug line-clamp-2 hover:text-primary">{product.title}</h3>
                   </Link>
                   <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{product.description}</p>
-                  <p className="mt-3 font-serif text-xl font-bold text-primary">
+                  <p className="mt-3 font-serif text-lg font-bold text-primary sm:text-xl">
                     {formatPrice(product.price, product.currency || "USD")}
                   </p>
-                  <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      {product.seller_name || product.seller?.display_name || "Alumni"}
-                      {product.seller?.membership_tier && <ShieldCheck className="h-3 w-3 text-primary" />}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+                    <span className="flex min-w-0 items-center gap-1">
+                      <User className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{product.seller_name || product.seller?.display_name || "Alumni"}</span>
+                      {product.seller?.membership_tier && <ShieldCheck className="h-3 w-3 shrink-0 text-primary" />}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex shrink-0 items-center gap-1">
                       <Clock className="h-3 w-3" /> {formatTimeAgo(product.created_at)}
                     </span>
                   </div>
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <Button
-                      className="flex-1 rounded-xl shadow-md active:scale-95 transition-transform"
+                      className="min-w-[8rem] flex-1 rounded-xl shadow-md active:scale-95 transition-transform"
                       disabled={product.quantity === 0}
                       onClick={() => handleAddToCart(product)}
                     >
                       <ShoppingBag className="mr-2 h-4 w-4" />
                       {product.quantity === 0 ? "Out of stock" : "Add to Cart"}
                     </Button>
-                    <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShowInterest(product)} title="Show interest — notify the seller">
-                      <Heart className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" className="rounded-xl" disabled={product.quantity === 0} onClick={() => handleRedeem(product)} title="Redeem with loyalty points">
-                      <Trophy className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShareToFeed(product)} title="Share to Feed">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShowInterest(product)} title="Show interest — notify the seller">
+                        <Heart className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" className="rounded-xl" disabled={product.quantity === 0} onClick={() => handleRedeem(product)} title="Redeem with loyalty points">
+                        <Trophy className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" className="rounded-xl" onClick={() => handleShareToFeed(product)} title="Share to Feed">
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

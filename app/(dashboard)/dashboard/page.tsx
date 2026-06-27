@@ -195,21 +195,21 @@ export default function DashboardPage() {
               <Trophy className="h-24 w-24 text-amber-600 rotate-12" />
             </div>
             <CardContent className="p-6 md:p-8 relative z-10">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-amber-600" />
                     <span className="text-sm font-bold text-amber-600 uppercase tracking-wider">Loyalty Rewards</span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold font-serif text-amber-700 dark:text-amber-400">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-4xl sm:text-5xl font-bold font-serif text-amber-700 dark:text-amber-400">
                       {loyaltyPoints.points}
                     </span>
                     <span className="text-muted-foreground font-medium">Points Earned</span>
                   </div>
                 </div>
-                
-                <div className="flex-1 max-w-md space-y-3">
+
+                <div className="w-full lg:max-w-sm space-y-3">
                   <div className="flex justify-between text-sm font-medium">
                     <span>Next Milestone: {loyaltyPoints.milestone} pts</span>
                     <span className="text-amber-600">{Math.round(progress)}%</span>
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                <Button className="w-full md:w-auto bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-lg shadow-amber-600/20" asChild>
+                <Button className="w-full lg:w-auto bg-amber-600 hover:bg-amber-700 text-white rounded-2xl shadow-lg shadow-amber-600/20" asChild>
                   <Link href="/leaderboard">View Leaderboard</Link>
                 </Button>
               </div>

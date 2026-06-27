@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { toWhatsAppNumber } from "@/lib/utils"
 
 // GET - Reveal the seller's contact details for a listing to a logged-in buyer.
 // profiles.phone is hidden from non-friends by RLS, so we read it with the
@@ -37,7 +38,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .maybeSingle()
 
     const phone = seller?.phone || seller?.phone_number || null
-    const whatsapp = phone ? phone.replace(/[^0-9]/g, "") : null
+    // wa.me needs a digits-only international number — a raw 07.. local number
+    // (or one with +/spaces) makes the WhatsApp link fail to open a chat.
+    const whatsapp = toWhatsAppNumber(phone)
 
     return NextResponse.json({
       sellerId: product.seller_id,

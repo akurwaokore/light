@@ -118,7 +118,17 @@
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" /tmp/claude-1000/-mnt-c-Users-USER-light/ccb44635-1d66-461b-840e-d0afc85f60ab/scratchpad/diag.mjs)",
       "Bash(\"/mnt/c/Program Files/nodejs/node.exe\" diag-temp.mjs)",
       "Bash('/mnt/c/Program Files/nodejs/node.exe' -e ' *)",
-      "Bash(awk '/products/,0' scripts/final-ultimate-fix.sql)"
+      "Bash(awk '/products/,0' scripts/final-ultimate-fix.sql)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" http://localhost:3000/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" http://localhost:3000/marketplace)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} -> %{redirect_url}\\\\n\" http://localhost:3000/feed)",
+      "Bash(curl -s -o /dev/null -w \"root: %{http_code}\\\\n\" --max-time 30 http://127.0.0.1:3000/)",
+      "Bash(curl -s -o /dev/null -w \"root: %{http_code}\\\\n\" --max-time 30 http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"marketplace: %{http_code} redir=%{redirect_url}\\\\n\" --max-time 30 http://localhost:3000/marketplace)",
+      "Bash(netstat -tlnp)",
+      "Bash(taskkill.exe /F /IM node.exe)",
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(pkill -f \"next dev\")"
     ]
   }
 }
