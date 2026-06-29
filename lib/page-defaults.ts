@@ -275,6 +275,58 @@ export const GLOBAL_DEFAULTS: Record<string, any> = {
   },
 }
 
+/** Editable site footer (CMS section `footer`). Shared by every public page via
+ *  <PublicFooter>, which renders these defaults instantly and merges any stored
+ *  `footer` content over them. */
+export const FOOTER_DEFAULTS = {
+  brand: {
+    title: "Light Alumni Network",
+    description:
+      "The official alumni community of Light Group of Schools. Reconnect with classmates, grow your career, give back, and stay part of the family — for life.",
+  },
+  social: {
+    facebook: "#",
+    twitter: "#",
+    instagram: "#",
+    linkedin: "#",
+  },
+  columns: {
+    explore: {
+      title: "Explore",
+      links: [
+        { label: "Home", href: "/" },
+        { label: "Events", href: "/public-events" },
+        { label: "Perks", href: "/public-perks" },
+        { label: "Leaderboard", href: "/public-leaderboard" },
+        { label: "Testimonials", href: "/testimonials" },
+        { label: "Videos", href: "/video-gallery" },
+      ],
+    },
+    community: {
+      title: "Community",
+      links: [
+        { label: "Member Directory", href: "/members" },
+        { label: "Clubs & Groups", href: "/clubs" },
+        { label: "Giving Back", href: "/giving" },
+        { label: "Newsletter", href: "/newsletter" },
+      ],
+    },
+  },
+  contact: {
+    title: "Get in Touch",
+    email: "alumni@lightschools.ac.ke",
+    phone: "+254 700 000 000",
+    address: "Light Group of Schools, Nairobi, Kenya",
+    cta: { label: "Join the network", href: "/auth/signup" },
+  },
+  copyright: "Light Alumni Network. All rights reserved.",
+  bottom_links: [
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+    { label: "Community", href: "/feed" },
+  ],
+}
+
 /** Every page that should exist in the Page Builder (cms_pages). */
 export const ALL_PUBLIC_PAGES = [
   { slug: "home", title: "Home" },

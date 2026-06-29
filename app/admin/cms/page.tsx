@@ -24,14 +24,15 @@ import {
   Youtube,
   ImagePlus,
   X,
-  FileText
+  FileText,
+  PanelBottom
 } from "lucide-react"
 import Image from "next/image"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { PageSectionEditor } from "@/components/admin/page-section-editor"
-import { PAGE_DEFAULTS, GLOBAL_DEFAULTS, EDITABLE_PAGES } from "@/lib/page-defaults"
+import { PAGE_DEFAULTS, GLOBAL_DEFAULTS, EDITABLE_PAGES, FOOTER_DEFAULTS } from "@/lib/page-defaults"
 
 /** Deep-merge stored CMS content over a page's defaults (arrays replace). */
 function mergeContent(base: any, override: any): any {
@@ -42,6 +43,26 @@ function mergeContent(base: any, override: any): any {
     return out
   }
   return override === undefined ? base : override
+}
+
+/** Immutably set a deep value by dot/array path, e.g. setPath(obj, "columns.explore.links.0.label", "Home"). */
+function setPath(obj: any, path: string, value: any): any {
+  const keys = path.split(".")
+  const root = Array.isArray(obj) ? [...obj] : { ...obj }
+  let cursor = root
+  for (let i = 0; i < keys.length - 1; i++) {
+    const k = keys[i]
+    const existing = cursor[k]
+    cursor[k] = Array.isArray(existing) ? [...existing] : { ...(existing ?? {}) }
+    cursor = cursor[k]
+  }
+  cursor[keys[keys.length - 1]] = value
+  return root
+}
+
+/** Read a deep value by dot/array path. */
+function getPath(obj: any, path: string): any {
+  return path.split(".").reduce((acc, k) => (acc == null ? acc : acc[k]), obj)
 }
 
 export default function CMSPage() {
@@ -78,6 +99,22 @@ export default function CMSPage() {
   const [testimonials, setTestimonials] = useState<any[]>([])
   const [stats, setStats] = useState<any[]>([])
   const [videoGallery, setVideoGallery] = useState<any[]>([])
+  const [footer, setFooter] = useState<any>(FOOTER_DEFAULTS)
+
+  // Footer editor helpers — operate on nested paths within the footer object.
+  const setFooterField = (path: string, value: any) => setFooter((prev: any) => setPath(prev, path, value))
+  const addFooterLink = (listPath: string) =>
+    setFooter((prev: any) => setPath(prev, listPath, [...(getPath(prev, listPath) || []), { label: "New link", href: "/" }]))
+  const removeFooterLink = (listPath: string, idx: number) =>
+    setFooter((prev: any) => setPath(prev, listPath, (getPath(prev, listPath) || []).filter((_: any, i: number) => i !== idx)))
+  const moveFooterLink = (listPath: string, idx: number, direction: "up" | "down") =>
+    setFooter((prev: any) => {
+      const arr = [...(getPath(prev, listPath) || [])]
+      const target = direction === "up" ? idx - 1 : idx + 1
+      if (target < 0 || target >= arr.length) return prev
+      ;[arr[idx], arr[target]] = [arr[target], arr[idx]]
+      return setPath(prev, listPath, arr)
+    })
 
   // Per-page section editor (Pages tab): edits the `page:<slug>` content row.
   const [pageSlug, setPageSlug] = useState(EDITABLE_PAGES[0].slug)
@@ -132,6 +169,7 @@ export default function CMSPage() {
         setTestimonials(pick('testimonials', PAGE_DEFAULTS.testimonials.grid.items))
         setStats(pick('stats', GLOBAL_DEFAULTS.stats.items))
         setVideoGallery(pick('video_gallery', GLOBAL_DEFAULTS.video_gallery.items))
+        setFooter(mergeContent(FOOTER_DEFAULTS, byName['footer'] || {}))
       }
     } catch (error) {
       console.error("Error fetching CMS data:", error)
@@ -337,6 +375,7 @@ export default function CMSPage() {
                 <TabsTrigger value="testimonials" className="gap-2 shrink-0"><ImageIcon className="h-4 w-4" />Testimonials</TabsTrigger>
                 <TabsTrigger value="stats" className="gap-2 shrink-0"><BarChart3 className="h-4 w-4" />Stats</TabsTrigger>
                 <TabsTrigger value="video" className="gap-2 shrink-0"><Video className="h-4 w-4" />Video Gallery</TabsTrigger>
+                <TabsTrigger value="footer" className="gap-2 shrink-0"><PanelBottom className="h-4 w-4" />Footer</TabsTrigger>
               </TabsList>
 
               {/* General Tab */}
@@ -699,6 +738,113 @@ export default function CMSPage() {
                     <div className="flex justify-end pt-4">
                       <Button onClick={() => saveSection('video_gallery', { items: videoGallery })} disabled={saving} className="gap-2">
                         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Video Gallery
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Footer Tab — edits the shared public-site footer (section `footer`) */}
+              <TabsContent value="footer" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Site Footer</CardTitle>
+                    <CardDescription>
+                      Edit the footer shown across every public page — brand text, social links, columns,
+                      contact details and the bottom bar. Changes go live immediately.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Brand */}
+                    <div className="rounded-lg border p-4 space-y-3">
+                      <h3 className="text-sm font-semibold">Brand</h3>
+                      <div className="space-y-1"><Label>Title</Label><Input value={footer.brand?.title || ""} onChange={(e) => setFooterField("brand.title", e.target.value)} /></div>
+                      <div className="space-y-1"><Label>Description</Label><Input value={footer.brand?.description || ""} onChange={(e) => setFooterField("brand.description", e.target.value)} /></div>
+                    </div>
+
+                    {/* Social links */}
+                    <div className="rounded-lg border p-4 space-y-3">
+                      <h3 className="text-sm font-semibold">Social Links</h3>
+                      <p className="text-xs text-muted-foreground">Leave a field blank to hide that icon.</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {(["facebook", "twitter", "instagram", "linkedin"] as const).map((key) => (
+                          <div key={key} className="space-y-1">
+                            <Label className="capitalize">{key}</Label>
+                            <Input placeholder="https://..." value={footer.social?.[key] || ""} onChange={(e) => setFooterField(`social.${key}`, e.target.value)} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Link columns */}
+                    {(["explore", "community"] as const).map((col) => (
+                      <div key={col} className="rounded-lg border p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-semibold capitalize">{col} Column</h3>
+                          <Button size="sm" variant="outline" className="gap-1" onClick={() => addFooterLink(`columns.${col}.links`)}><Plus className="h-4 w-4" /> Add Link</Button>
+                        </div>
+                        <div className="space-y-1"><Label>Column Heading</Label><Input value={footer.columns?.[col]?.title || ""} onChange={(e) => setFooterField(`columns.${col}.title`, e.target.value)} /></div>
+                        <div className="space-y-3">
+                          {(footer.columns?.[col]?.links || []).map((link: any, idx: number) => (
+                            <div key={idx} className="relative grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md border bg-muted/20 p-3 pr-24">
+                              <div className="absolute right-2 top-2 flex gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => moveFooterLink(`columns.${col}.links`, idx, "up")} disabled={idx === 0}><MoveUp className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => moveFooterLink(`columns.${col}.links`, idx, "down")} disabled={idx === (footer.columns?.[col]?.links?.length || 0) - 1}><MoveDown className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeFooterLink(`columns.${col}.links`, idx)}><Trash2 className="h-4 w-4" /></Button>
+                              </div>
+                              <div className="space-y-1"><Label>Label</Label><Input value={link.label || ""} onChange={(e) => setFooterField(`columns.${col}.links.${idx}.label`, e.target.value)} /></div>
+                              <div className="space-y-1"><Label>Link (href)</Label><Input value={link.href || ""} onChange={(e) => setFooterField(`columns.${col}.links.${idx}.href`, e.target.value)} /></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Contact */}
+                    <div className="rounded-lg border p-4 space-y-3">
+                      <h3 className="text-sm font-semibold">Get in Touch</h3>
+                      <div className="space-y-1"><Label>Column Heading</Label><Input value={footer.contact?.title || ""} onChange={(e) => setFooterField("contact.title", e.target.value)} /></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1"><Label>Email</Label><Input value={footer.contact?.email || ""} onChange={(e) => setFooterField("contact.email", e.target.value)} /></div>
+                        <div className="space-y-1"><Label>Phone</Label><Input value={footer.contact?.phone || ""} onChange={(e) => setFooterField("contact.phone", e.target.value)} /></div>
+                      </div>
+                      <div className="space-y-1"><Label>Address</Label><Input value={footer.contact?.address || ""} onChange={(e) => setFooterField("contact.address", e.target.value)} /></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1"><Label>CTA Button Label</Label><Input value={footer.contact?.cta?.label || ""} onChange={(e) => setFooterField("contact.cta.label", e.target.value)} /></div>
+                        <div className="space-y-1"><Label>CTA Button Link</Label><Input value={footer.contact?.cta?.href || ""} onChange={(e) => setFooterField("contact.cta.href", e.target.value)} /></div>
+                      </div>
+                    </div>
+
+                    {/* Bottom bar */}
+                    <div className="rounded-lg border p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold">Bottom Bar</h3>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => addFooterLink("bottom_links")}><Plus className="h-4 w-4" /> Add Link</Button>
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Copyright text</Label>
+                        <Input value={footer.copyright || ""} onChange={(e) => setFooterField("copyright", e.target.value)} />
+                        <p className="text-[11px] text-muted-foreground">Shown after “© {new Date().getFullYear()}”.</p>
+                      </div>
+                      <div className="space-y-3">
+                        {(footer.bottom_links || []).map((link: any, idx: number) => (
+                          <div key={idx} className="relative grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-md border bg-muted/20 p-3 pr-24">
+                            <div className="absolute right-2 top-2 flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => moveFooterLink("bottom_links", idx, "up")} disabled={idx === 0}><MoveUp className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => moveFooterLink("bottom_links", idx, "down")} disabled={idx === (footer.bottom_links?.length || 0) - 1}><MoveDown className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="text-destructive" onClick={() => removeFooterLink("bottom_links", idx)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                            <div className="space-y-1"><Label>Label</Label><Input value={link.label || ""} onChange={(e) => setFooterField(`bottom_links.${idx}.label`, e.target.value)} /></div>
+                            <div className="space-y-1"><Label>Link (href)</Label><Input value={link.href || ""} onChange={(e) => setFooterField(`bottom_links.${idx}.href`, e.target.value)} /></div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setFooter(FOOTER_DEFAULTS)}>Reset to defaults</Button>
+                      <Button onClick={() => saveSection('footer', footer)} disabled={saving} className="gap-2 w-full sm:w-auto">
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Footer
                       </Button>
                     </div>
                   </CardContent>
