@@ -439,7 +439,7 @@ export default function UserManagement() {
                 <div className="space-y-2">
                   <Label htmlFor="campus">Campus</Label>
                   <Select defaultValue={selectedUser.campus}>
-                    <SelectTrigger id="campus">
+                    <SelectTrigger id="campus"> 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
