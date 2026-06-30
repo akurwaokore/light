@@ -28,9 +28,6 @@ import {
   PanelBottom
 } from "lucide-react"
 import Image from "next/image"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
-import { AdminHeader } from "@/components/admin/admin-header"
 import { PageSectionEditor } from "@/components/admin/page-section-editor"
 import { PAGE_DEFAULTS, GLOBAL_DEFAULTS, EDITABLE_PAGES, FOOTER_DEFAULTS } from "@/lib/page-defaults"
 
@@ -322,25 +319,14 @@ export default function CMSPage() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <AdminSidebar />
-        <SidebarInset>
-          <AdminHeader />
-          <div className="flex h-[400px] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     )
   }
 
   return (
-    <SidebarProvider>
-      <AdminSidebar />
-      <SidebarInset>
-        <AdminHeader />
-        <main className="flex-1 p-4 md:p-6 bg-muted/30">
-          <div className="container mx-auto">
+        <div className="container mx-auto">
             <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Content Management System</h1>
@@ -851,9 +837,6 @@ export default function CMSPage() {
                 </Card>
               </TabsContent>
             </Tabs>
-          </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+        </div>
   )
 }
